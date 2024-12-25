@@ -46,3 +46,6 @@ For suggestions and support, contact us [here](https://codecarebd.com/contact).
 
 = 16/02/2024 =
 * Fixed issues on Single Order Page.
+
+= 25/12/2024 =
+* Validation Error Fix.
