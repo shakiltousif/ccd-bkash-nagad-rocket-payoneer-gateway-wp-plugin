@@ -3,9 +3,9 @@
 **Contributors:** devshakil, codecarebd
 **Tags:** bKash, nagad, payoneer, rocket, woocommerce paymeny gateway
 **Requires at least:** 6.3
-**Requires PHP:** 7.1
-**Tested up to:** 6.4.3
-**Stable tag:** 0.7
+**Requires PHP:** 7.3
+**Tested up to:** 6.7.1
+**Stable tag:** 0.8
 **License:** GPLv2 or later
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html
 

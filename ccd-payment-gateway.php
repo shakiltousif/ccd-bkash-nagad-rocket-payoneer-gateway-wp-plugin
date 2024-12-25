@@ -5,12 +5,12 @@
  * Plugin URI: https://wordpress.org/plugins/codecarebd-bkash-nagad-rocket-payoneer-gateway
  * Description: CodeCareBD - Bkash, Nagad, Rocket, Payoneer Gateway plugin is for WooCommerce. This plugin will help you to integrate Bkash, Nagad, Rocket, and Payoneer Payment Gateway.
  * Author: Shakil Ahamed
- * Version: 0.7
- * Tested up to: 6.4.3
+ * Version: 0.8
+ * Tested up to: 6.7.1
  * Author URI: https://shakilahamed.com
  * Text Domain: ccd-payment-gateway-domain
  * 
- * Woocommerce tested up to: 8.5.2
+ * Woocommerce tested up to: 9.5.1
  *
  */
 
