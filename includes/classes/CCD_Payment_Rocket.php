@@ -109,6 +109,60 @@ class CCD_Payment_Rocket extends WC_Payment_Gateway
 
         echo $ccd_rocket_charge;
 
+        // Check if advance payment is enabled
+        $advance_payment_enabled = get_option('ccd_enable_advance_payment', 'no') === 'yes';
+        
+        if ($advance_payment_enabled && $woocommerce->cart->needs_shipping()) {
+            $shipping_total = $woocommerce->cart->get_shipping_total();
+            $shipping_tax = $woocommerce->cart->get_shipping_tax();
+            $advance_amount = floatval($shipping_total) + floatval($shipping_tax);
+            
+            // Calculate remaining amount: total cart amount minus shipping (advance payment)
+            $cart_total = floatval($woocommerce->cart->get_total(''));
+            $remaining_amount = $cart_total - $advance_amount;
+            
+            if ($advance_amount > 0) {
+                // Get customizable texts from settings with fallback to defaults
+                $advance_payment_title = get_option('ccd_advance_payment_title', '');
+                $advance_payment_title = !empty($advance_payment_title) ? $advance_payment_title : __('Advance Payment Information:', 'ccd-payment-gateway-domain');
+                $advance_payment_title = apply_filters('ccd_advance_payment_title', $advance_payment_title);
+                
+                $advance_payment_text = get_option('ccd_advance_payment_text', '');
+                $advance_payment_text = !empty($advance_payment_text) ? $advance_payment_text : __('You will pay only the delivery charge as advance payment:', 'ccd-payment-gateway-domain');
+                $advance_payment_text = apply_filters('ccd_advance_payment_text', $advance_payment_text);
+                
+                $remaining_payment_text = get_option('ccd_remaining_payment_text', '');
+                $remaining_payment_text = !empty($remaining_payment_text) ? $remaining_payment_text : __('Remaining amount to be paid later:', 'ccd-payment-gateway-domain');
+                $remaining_payment_text = apply_filters('ccd_remaining_payment_text', $remaining_payment_text);
+                
+                // Replace {amount} placeholder if used
+                $advance_formatted = wc_price($advance_amount, array('currency' => get_woocommerce_currency()));
+                $remaining_formatted = wc_price($remaining_amount, array('currency' => get_woocommerce_currency()));
+                
+                $advance_payment_text = str_replace('{amount}', $advance_formatted, $advance_payment_text);
+                $remaining_payment_text = str_replace('{amount}', $remaining_formatted, $remaining_payment_text);
+                
+                echo '<div class="ccd_advance_payment_notice" style="background: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin: 15px 0; border-radius: 4px;">';
+                echo '<strong>' . esc_html($advance_payment_title) . '</strong><br>';
+                
+                // If placeholder was used, show text as-is, otherwise append amount
+                if (strpos(get_option('ccd_advance_payment_text', ''), '{amount}') !== false) {
+                    echo wp_kses_post($advance_payment_text) . '<br>';
+                } else {
+                    echo esc_html($advance_payment_text) . ' <strong>' . $advance_formatted . '</strong><br>';
+                }
+                
+                // If placeholder was used, show text as-is, otherwise append amount
+                if (strpos(get_option('ccd_remaining_payment_text', ''), '{amount}') !== false) {
+                    echo wp_kses_post($remaining_payment_text);
+                } else {
+                    echo esc_html($remaining_payment_text) . ' <strong>' . $remaining_formatted . '</strong>';
+                }
+                
+                echo '</div>';
+            }
+        }
+
         echo wpautop(wptexturize(esc_html__($this->description, "ccd-payment-gateway-domain")) . $ccd_rocket_charge);
 
         if (isset($this->ccd_rocket_account_type)) {
@@ -133,19 +187,56 @@ class CCD_Payment_Rocket extends WC_Payment_Gateway
     public function process_payment($order_id)
     {
         global $woocommerce;
-        $order = new WC_Order($order_id);
+        $order = wc_get_order($order_id);
 
-        $status = null;
-        if ('wc-' === substr($this->cdd_rocket_order_status, 0, 3)) {
-
-            $status = substr($this->cdd_rocket_order_status, 3);
+        // Check if advance payment is enabled
+        $advance_payment_enabled = get_option('ccd_enable_advance_payment', 'no') === 'yes';
+        
+        if ($advance_payment_enabled) {
+            // Get shipping total (advance payment amount)
+            $shipping_total = $order->get_shipping_total();
+            $shipping_tax = $order->get_shipping_tax();
+            $advance_amount = floatval($shipping_total) + floatval($shipping_tax);
+            
+            // Only proceed if there's a shipping charge
+            if ($advance_amount > 0) {
+                // Store original order total
+                $original_total = $order->get_total();
+                $remaining_amount = $original_total - $advance_amount;
+                
+                // Store advance payment meta
+                $order->update_meta_data('_ccd_advance_payment_received', 'yes');
+                $order->update_meta_data('_ccd_original_order_total', $original_total);
+                $order->update_meta_data('_ccd_advance_amount_paid', $advance_amount);
+                $order->update_meta_data('_ccd_remaining_amount', $remaining_amount);
+                
+                // Update order total to shipping charge only
+                $order->set_total($advance_amount);
+                $order->save();
+                
+                // Set status to "Advance Received"
+                $order->update_status('advance-received', esc_html__('Advance payment (delivery charge) received via Rocket. Remaining amount: ', 'ccd-payment-gateway-domain') . wc_price($remaining_amount));
+            } else {
+                // No shipping charge, proceed with normal payment
+                $status = null;
+                if ('wc-' === substr($this->cdd_rocket_order_status, 0, 3)) {
+                    $status = substr($this->cdd_rocket_order_status, 3);
+                } else {
+                    $status = $this->cdd_rocket_order_status;
+                }
+                $order->update_status($status, esc_html__('Checkout with Rocket payment. ', "ccd-payment-gateway-domain"));
+            }
         } else {
-
-            $status = $this->cdd_rocket_order_status;
+            // Normal payment flow
+            $status = null;
+            if ('wc-' === substr($this->cdd_rocket_order_status, 0, 3)) {
+                $status = substr($this->cdd_rocket_order_status, 3);
+            } else {
+                $status = $this->cdd_rocket_order_status;
+            }
+            // Mark as on-hold (we're awaiting the Rocket)
+            $order->update_status($status, esc_html__('Checkout with Rocket payment. ', "ccd-payment-gateway-domain"));
         }
-
-        // Mark as on-hold (we're awaiting the bKash)
-        $order->update_status($status, esc_html('Checkout with Rocket payment. ', "ccd-payment-gateway-domain"));
 
         // Reduce stock levels
         $order->reduce_order_stock();
@@ -179,8 +270,8 @@ class CCD_Payment_Rocket extends WC_Payment_Gateway
     {
         if ($order->get_payment_method() != $this->id)
             return;
-        if ($this->instructions && !$sent_to_admin && $this->id === $order->get_payment_method()) {
-            echo wpautop(wptexturize($this->instructions)) . PHP_EOL;
+        if ($this->ccd_rocket_instructions && !$sent_to_admin && $this->id === $order->get_payment_method()) {
+            echo wpautop(wptexturize($this->ccd_rocket_instructions)) . PHP_EOL;
         }
     }
 }

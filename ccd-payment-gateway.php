@@ -5,7 +5,7 @@
  * Plugin URI: https://wordpress.org/plugins/codecarebd-bkash-nagad-rocket-payoneer-gateway
  * Description: CodeCareBD - Bkash, Nagad, Rocket, Payoneer Gateway plugin is for WooCommerce. This plugin will help you to integrate Bkash, Nagad, Rocket, and Payoneer Payment Gateway.
  * Author: Shakil Ahamed
- * Version: 0.8
+ * Version: 0.9
  * Tested up to: 6.7.1
  * Author URI: https://shakilahamed.com
  * Text Domain: ccd-payment-gateway-domain
@@ -16,6 +16,10 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
+// Define plugin constants
+define('CCD_PAYMENT_GATEWAY_VERSION', '0.9');
+define('CCD_PAYMENT_GATEWAY_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('CCD_PAYMENT_GATEWAY_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 //include plugin modules
 include_once(ABSPATH . 'wp-admin/includes/plugin.php');
@@ -43,6 +47,19 @@ if (is_plugin_active('woocommerce/woocommerce.php')) {
 
 
     add_action('wp_enqueue_scripts', 'ccd_checkout_page_enqueue_script');
+
+    // Register custom order status for advance payment
+    add_action('init', 'ccd_register_advance_received_order_status');
+    
+    // Add custom order status to WooCommerce order statuses
+    add_filter('woocommerce_register_shop_order_post_statuses', 'ccd_add_advance_received_to_order_statuses');
+    
+    // Add custom order status to order status list
+    add_filter('wc_order_statuses', 'ccd_add_advance_received_order_status');
+    
+    // Add settings page for advance payment
+    add_action('admin_menu', 'ccd_add_advance_payment_settings_page');
+    add_action('admin_init', 'ccd_register_advance_payment_settings');
 
 
     /**
@@ -262,6 +279,12 @@ function ccd_bkash_admin_order_data_function($order)
 
 
 
+    // Check if advance payment is enabled and used
+    $order_id = method_exists($order, 'get_id') ? $order->get_id() : (isset($_GET['id']) ? $_GET['id'] : (isset($_GET['post']) ? $_GET['post'] : 0));
+    $is_advance_payment = get_post_meta($order_id, '_ccd_advance_payment_received', true);
+    $original_total = get_post_meta($order_id, '_ccd_original_order_total', true);
+    $advance_amount = get_post_meta($order_id, '_ccd_advance_amount_paid', true);
+    $remaining_amount = get_post_meta($order_id, '_ccd_remaining_amount', true);
 ?>
     <div class="form-field form-field-wide">
         <img src='<?php echo esc_attr($img_url); ?>' width="150" />
@@ -274,8 +297,24 @@ function ccd_bkash_admin_order_data_function($order)
                 <tr>
                     <th><strong><?php esc_html_e('Transaction ID.', 'ccd-payment-gateway-domain'); ?></strong></th>
                     <td>: <?php echo esc_attr($transaction); ?></td>
-
                 </tr>
+                <?php if ($is_advance_payment === 'yes' && $original_total) : ?>
+                <tr>
+                    <th colspan="2"><strong style="color: #2271b1;"><?php esc_html_e('Advance Payment Information', 'ccd-payment-gateway-domain'); ?></strong></th>
+                </tr>
+                <tr>
+                    <th><strong><?php esc_html_e('Original Order Total', 'ccd-payment-gateway-domain'); ?></strong></th>
+                    <td>: <?php echo wc_price($original_total); ?></td>
+                </tr>
+                <tr>
+                    <th><strong><?php esc_html_e('Advance Amount Paid', 'ccd-payment-gateway-domain'); ?></strong></th>
+                    <td>: <?php echo wc_price($advance_amount); ?> <span style="color: green;">✓</span></td>
+                </tr>
+                <tr>
+                    <th><strong><?php esc_html_e('Remaining Amount', 'ccd-payment-gateway-domain'); ?></strong></th>
+                    <td>: <?php echo wc_price($remaining_amount); ?> <span style="color: orange;">⚠</span></td>
+                </tr>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
@@ -346,6 +385,11 @@ function ccd_additional_info_order_review_fields_function($order)
     }
 
 
+    // Check if advance payment is enabled and used
+    $is_advance_payment = get_post_meta($order_id, '_ccd_advance_payment_received', true);
+    $original_total = get_post_meta($order_id, '_ccd_original_order_total', true);
+    $advance_amount = get_post_meta($order_id, '_ccd_advance_amount_paid', true);
+    $remaining_amount = get_post_meta($order_id, '_ccd_remaining_amount', true);
 ?>
     <table>
         <tr>
@@ -356,6 +400,23 @@ function ccd_additional_info_order_review_fields_function($order)
             <th><?php esc_html_e('Transaction ID:', 'ccd-payment-gateway-domain'); ?></th>
             <td><?php echo esc_attr($transaction); ?></td>
         </tr>
+        <?php if ($is_advance_payment === 'yes' && $original_total) : ?>
+        <tr>
+            <th colspan="2"><strong style="color: #2271b1;"><?php esc_html_e('Advance Payment Information', 'ccd-payment-gateway-domain'); ?></strong></th>
+        </tr>
+        <tr>
+            <th><?php esc_html_e('Original Order Total', 'ccd-payment-gateway-domain'); ?></th>
+            <td><?php echo wc_price($original_total); ?></td>
+        </tr>
+        <tr>
+            <th><?php esc_html_e('Advance Amount Paid', 'ccd-payment-gateway-domain'); ?></th>
+            <td><?php echo wc_price($advance_amount); ?> <span style="color: green;">✓</span></td>
+        </tr>
+        <tr>
+            <th><?php esc_html_e('Remaining Amount', 'ccd-payment-gateway-domain'); ?></th>
+            <td><?php echo wc_price($remaining_amount); ?> <span style="color: orange;">⚠</span></td>
+        </tr>
+        <?php endif; ?>
     </table>
 <?php
 
@@ -614,6 +675,205 @@ add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'ccd_payment_gate
 function ccd_payment_gateway_action_links($actions)
 {
     $actions[] = '<a href="' . esc_url(get_admin_url(null, 'admin.php?page=wc-settings&tab=checkout')) . '">' . __("Settings", "ccd-payment-gateway-domain") . '</a>';
+    $actions[] = '<a href="' . esc_url(get_admin_url(null, 'admin.php?page=ccd-advance-payment-settings')) . '">' . __("Advance Payment", "ccd-payment-gateway-domain") . '</a>';
     $actions[] = '<a href="https://codecarebd.com/contact" target="_blank">' . esc_html(__("Support", "ccd-payment-gateway-domain")) . '</a>';
     return $actions;
+}
+
+/**
+ * Register custom order status "Advance Received"
+ */
+function ccd_register_advance_received_order_status()
+{
+    register_post_status('wc-advance-received', array(
+        'label'                     => esc_html__('Advance Received', 'ccd-payment-gateway-domain'),
+        'public'                    => true,
+        'exclude_from_search'       => false,
+        'show_in_admin_all_list'    => true,
+        'show_in_admin_status_list' => true,
+        'label_count'               => _n_noop('Advance Received <span class="count">(%s)</span>', 'Advance Received <span class="count">(%s)</span>', 'ccd-payment-gateway-domain')
+    ));
+}
+
+/**
+ * Add custom order status to WooCommerce order statuses
+ */
+function ccd_add_advance_received_to_order_statuses($order_statuses)
+{
+    $order_statuses['wc-advance-received'] = array(
+        'label'                     => esc_html__('Advance Received', 'ccd-payment-gateway-domain'),
+        'public'                    => true,
+        'exclude_from_search'       => false,
+        'show_in_admin_all_list'    => true,
+        'show_in_admin_status_list' => true,
+        'label_count'               => _n_noop('Advance Received <span class="count">(%s)</span>', 'Advance Received <span class="count">(%s)</span>', 'ccd-payment-gateway-domain')
+    );
+    return $order_statuses;
+}
+
+/**
+ * Add custom order status to order status list
+ */
+function ccd_add_advance_received_order_status($order_statuses)
+{
+    $new_order_statuses = array();
+    
+    foreach ($order_statuses as $key => $status) {
+        $new_order_statuses[$key] = $status;
+        
+        // Insert after "on-hold" status
+        if ('wc-on-hold' === $key) {
+            $new_order_statuses['wc-advance-received'] = esc_html__('Advance Received', 'ccd-payment-gateway-domain');
+        }
+    }
+    
+    return $new_order_statuses;
+}
+
+/**
+ * Add settings page for advance payment
+ */
+function ccd_add_advance_payment_settings_page()
+{
+    add_submenu_page(
+        'woocommerce',
+        esc_html__('Advance Payment Settings', 'ccd-payment-gateway-domain'),
+        esc_html__('Advance Payment', 'ccd-payment-gateway-domain'),
+        'manage_woocommerce',
+        'ccd-advance-payment-settings',
+        'ccd_advance_payment_settings_page'
+    );
+}
+
+/**
+ * Register advance payment settings
+ */
+function ccd_register_advance_payment_settings()
+{
+    register_setting('ccd_advance_payment_settings', 'ccd_enable_advance_payment');
+    register_setting('ccd_advance_payment_settings', 'ccd_advance_payment_status_label');
+    register_setting('ccd_advance_payment_settings', 'ccd_advance_payment_title');
+    register_setting('ccd_advance_payment_settings', 'ccd_advance_payment_text');
+    register_setting('ccd_advance_payment_settings', 'ccd_remaining_payment_text');
+}
+
+/**
+ * Display advance payment settings page
+ */
+function ccd_advance_payment_settings_page()
+{
+    if (isset($_POST['ccd_advance_payment_submit'])) {
+        check_admin_referer('ccd_advance_payment_settings');
+        
+        $enable_advance_payment = isset($_POST['ccd_enable_advance_payment']) ? 'yes' : 'no';
+        $status_label = isset($_POST['ccd_advance_payment_status_label']) ? sanitize_text_field($_POST['ccd_advance_payment_status_label']) : 'Advance Received';
+        $advance_title = isset($_POST['ccd_advance_payment_title']) ? sanitize_text_field($_POST['ccd_advance_payment_title']) : '';
+        $advance_text = isset($_POST['ccd_advance_payment_text']) ? sanitize_textarea_field($_POST['ccd_advance_payment_text']) : '';
+        $remaining_text = isset($_POST['ccd_remaining_payment_text']) ? sanitize_textarea_field($_POST['ccd_remaining_payment_text']) : '';
+        
+        update_option('ccd_enable_advance_payment', $enable_advance_payment);
+        update_option('ccd_advance_payment_status_label', $status_label);
+        update_option('ccd_advance_payment_title', $advance_title);
+        update_option('ccd_advance_payment_text', $advance_text);
+        update_option('ccd_remaining_payment_text', $remaining_text);
+        
+        echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Settings saved successfully!', 'ccd-payment-gateway-domain') . '</p></div>';
+    }
+    
+    $enable_advance_payment = get_option('ccd_enable_advance_payment', 'no');
+    $status_label = get_option('ccd_advance_payment_status_label', 'Advance Received');
+    $advance_title = get_option('ccd_advance_payment_title', '');
+    $advance_text = get_option('ccd_advance_payment_text', '');
+    $remaining_text = get_option('ccd_remaining_payment_text', '');
+    ?>
+    <div class="wrap">
+        <h1><?php echo esc_html__('Advance Payment Settings', 'ccd-payment-gateway-domain'); ?></h1>
+        <form method="post" action="">
+            <?php wp_nonce_field('ccd_advance_payment_settings'); ?>
+            <table class="form-table">
+                <tr>
+                    <th scope="row">
+                        <label for="ccd_enable_advance_payment"><?php echo esc_html__('Enable Advance Payment', 'ccd-payment-gateway-domain'); ?></label>
+                    </th>
+                    <td>
+                        <input type="checkbox" id="ccd_enable_advance_payment" name="ccd_enable_advance_payment" value="yes" <?php checked($enable_advance_payment, 'yes'); ?>>
+                        <p class="description">
+                            <?php echo esc_html__('When enabled, customers will pay only the delivery/shipping charge as advance payment. The order will be set to "Advance Received" status after payment confirmation.', 'ccd-payment-gateway-domain'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="ccd_advance_payment_status_label"><?php echo esc_html__('Order Status Label', 'ccd-payment-gateway-domain'); ?></label>
+                    </th>
+                    <td>
+                        <input type="text" id="ccd_advance_payment_status_label" name="ccd_advance_payment_status_label" value="<?php echo esc_attr($status_label); ?>" class="regular-text">
+                        <p class="description">
+                            <?php echo esc_html__('Customize the label for the advance payment order status.', 'ccd-payment-gateway-domain'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="ccd_advance_payment_title"><?php echo esc_html__('Advance Payment Title', 'ccd-payment-gateway-domain'); ?></label>
+                    </th>
+                    <td>
+                        <input type="text" id="ccd_advance_payment_title" name="ccd_advance_payment_title" value="<?php echo esc_attr($advance_title); ?>" class="regular-text" placeholder="<?php echo esc_attr__('Advance Payment Information:', 'ccd-payment-gateway-domain'); ?>">
+                        <p class="description">
+                            <?php echo esc_html__('Customize the title shown in the advance payment notice box. Leave empty to use default.', 'ccd-payment-gateway-domain'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="ccd_advance_payment_text"><?php echo esc_html__('Advance Payment Text', 'ccd-payment-gateway-domain'); ?></label>
+                    </th>
+                    <td>
+                        <textarea id="ccd_advance_payment_text" name="ccd_advance_payment_text" rows="3" class="large-text" placeholder="<?php echo esc_attr__('You will pay only the delivery charge as advance payment:', 'ccd-payment-gateway-domain'); ?>"><?php echo esc_textarea($advance_text); ?></textarea>
+                        <p class="description">
+                            <?php echo esc_html__('Customize the text explaining the advance payment amount. Leave empty to use default. Use {amount} placeholder to show the advance amount dynamically.', 'ccd-payment-gateway-domain'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="ccd_remaining_payment_text"><?php echo esc_html__('Remaining Payment Text', 'ccd-payment-gateway-domain'); ?></label>
+                    </th>
+                    <td>
+                        <textarea id="ccd_remaining_payment_text" name="ccd_remaining_payment_text" rows="3" class="large-text" placeholder="<?php echo esc_attr__('Remaining amount to be paid later:', 'ccd-payment-gateway-domain'); ?>"><?php echo esc_textarea($remaining_text); ?></textarea>
+                        <p class="description">
+                            <?php echo esc_html__('Customize the text explaining the remaining payment amount. Leave empty to use default. Use {amount} placeholder to show the remaining amount dynamically.', 'ccd-payment-gateway-domain'); ?>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+            <p class="submit">
+                <input type="submit" name="ccd_advance_payment_submit" class="button button-primary" value="<?php echo esc_attr__('Save Settings', 'ccd-payment-gateway-domain'); ?>">
+            </p>
+        </form>
+    </div>
+    <?php
+}
+
+/**
+ * Check if advance payment is enabled
+ */
+function ccd_is_advance_payment_enabled()
+{
+    return get_option('ccd_enable_advance_payment', 'no') === 'yes';
+}
+
+/**
+ * Get advance payment amount (shipping charge)
+ */
+function ccd_get_advance_payment_amount($order)
+{
+    if (!$order) {
+        return 0;
+    }
+    
+    $shipping_total = $order->get_shipping_total();
+    $shipping_tax = $order->get_shipping_tax();
+    
+    return floatval($shipping_total) + floatval($shipping_tax);
 }
