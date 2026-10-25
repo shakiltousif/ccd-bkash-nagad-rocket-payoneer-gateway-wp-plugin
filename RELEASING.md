@@ -10,6 +10,7 @@ WordPress.org SVN is the distribution channel; this GitHub repository is the sou
 |---|---|---|
 | 1.5.0 | `release/1.5.0` | 2026-11-01 |
 | 1.6.0 | `release/1.6.0` | 2026-11-15 |
+| 1.7.0 | `release/1.7.0` | 2026-12-01 |
 
 `.github/workflows/scheduled-release.yml` (on `main`) runs every day at 04:00 UTC (10:00 Bangladesh time):
 
