@@ -11,7 +11,9 @@ WordPress.org with `10up/action-wordpress-plugin-deploy`:
 2. Pre-flight: plugin header version, `CCD_PAYMENT_GATEWAY_VERSION`, readme `Stable tag` and changelog
    all equal `RELEASE_VERSION`; every PHP file passes `php -l`.
 3. Syncs the branch to SVN `trunk` (files listed in `.distignore` are left out), copies it to
-   `tags/1.5.0`, commits.
+   `tags/1.5.0`, commits. `.wordpress-org/` is synced to SVN `assets/` **with deletion**: anything
+   not in that folder (banner, icon, screenshot) is removed from WordPress.org, so keep every
+   asset in it.
 4. Confirms the tag exists on WordPress.org and pushes git tag `v1.5.0`.
 
 ### One-time setup

@@ -870,7 +870,7 @@ function ccd_advance_payment_settings_page()
                     <td>
                         <input type="checkbox" id="ccd_enable_advance_payment" name="ccd_enable_advance_payment" value="yes" <?php checked($enable_advance_payment, 'yes'); ?>>
                         <p class="description">
-                            <?php echo esc_html__('When enabled, customers will pay only the delivery/shipping charge as advance payment. The order will be set to "Advance Received" status after payment confirmation.', 'ccd-payment-gateway-domain'); ?>
+                            <?php echo esc_html__('When enabled, customers paying with these gateways pay only an advance now (the delivery charge, or a fixed amount for inside / outside Dhaka) and the rest later. The order is set to "Advance Received".', 'ccd-payment-gateway-domain'); ?>
                         </p>
                     </td>
                 </tr>
