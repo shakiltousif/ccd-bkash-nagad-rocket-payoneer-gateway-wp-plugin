@@ -145,52 +145,79 @@ function ccd_proof_script_data()
 function ccd_proof_store_upload($field, $subdir, $prefix = '')
 {
     if (empty($_FILES[$field]) || !isset($_FILES[$field]['tmp_name'], $_FILES[$field]['name'], $_FILES[$field]['error'], $_FILES[$field]['size'])) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.NonceVerification.Missing -- callers verify the nonce.
-        return new WP_Error('ccd_proof', __('No file received.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
+        return new WP_Error('no_file', __('No file received.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
     }
 
     $file = $_FILES[$field]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- validated below; callers verify the nonce.
     if (in_array((int) $file['error'], array(UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE), true)) {
-        return new WP_Error('ccd_proof', ccd_proof_too_big_message(), 400);
+        return new WP_Error('too_big', ccd_proof_too_big_message(), 400);
     }
     if (UPLOAD_ERR_NO_FILE === (int) $file['error']) {
-        return new WP_Error('ccd_proof', __('Please choose a file to upload.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
+        return new WP_Error('no_file', __('Please choose a file to upload.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
     }
     if (UPLOAD_ERR_OK !== (int) $file['error'] || !is_uploaded_file($file['tmp_name'])) {
-        return new WP_Error('ccd_proof', __('Upload failed. Please try again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
+        return new WP_Error('failed', __('Upload failed. Please try again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
     }
     if ((int) $file['size'] <= 0 || (int) $file['size'] > ccd_proof_max_bytes()) {
-        return new WP_Error('ccd_proof', ccd_proof_too_big_message(), 400);
+        return new WP_Error('too_big', ccd_proof_too_big_message(), 400);
     }
 
     $name  = sanitize_file_name(wp_unslash($file['name']));
     $check = wp_check_filetype_and_ext($file['tmp_name'], $name, ccd_proof_mimes());
     if (empty($check['ext']) || empty($check['type'])) {
-        return new WP_Error('ccd_proof', __('Please upload a JPG, PNG, WebP or PDF file.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
+        return new WP_Error('type', __('Please upload a JPG, PNG, WebP or PDF file.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
     }
 
     // Content check: real image, or a real PDF.
     if ('application/pdf' === $check['type']) {
         $head = (string) file_get_contents($file['tmp_name'], false, null, 0, 5); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
         if ('%PDF-' !== $head) {
-            return new WP_Error('ccd_proof', __('This PDF file appears to be damaged.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
+            return new WP_Error('damaged', __('This PDF file appears to be damaged.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
         }
     } elseif (false === @getimagesize($file['tmp_name'])) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-        return new WP_Error('ccd_proof', __('This image file appears to be damaged.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
+        return new WP_Error('damaged', __('This image file appears to be damaged.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
     }
 
     $dir = ccd_proof_dir();
     if (!$dir) {
-        return new WP_Error('ccd_proof', __('Upload failed. Please try again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 500);
+        return new WP_Error('failed', __('Upload failed. Please try again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 500);
     }
 
     $ext      = 'jpeg' === $check['ext'] ? 'jpg' : $check['ext'];
     $relative = $subdir . $prefix . bin2hex(random_bytes(16)) . '.' . $ext;
     if (!@move_uploaded_file($file['tmp_name'], $dir . $relative)) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-        return new WP_Error('ccd_proof', __('Upload failed. Please try again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 500);
+        return new WP_Error('failed', __('Upload failed. Please try again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 500);
     }
     @chmod($dir . $relative, 0640); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 
     return array('file' => $relative, 'name' => $name, 'type' => $check['type']);
+}
+
+/**
+ * Customer message for an upload error code. Only fixed codes travel in URLs,
+ * so a crafted link cannot show arbitrary text on the shop's order page.
+ *
+ * @param string $code Error code.
+ * @return string
+ */
+function ccd_proof_error_message($code)
+{
+    switch ($code) {
+        case 'too_big':
+            return ccd_proof_too_big_message();
+        case 'type':
+            return __('Please upload a JPG, PNG, WebP or PDF file.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
+        case 'damaged':
+            return __('This file appears to be damaged.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
+        case 'no_file':
+            return __('Please choose a file to upload.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
+        case 'closed':
+            return __('This order can no longer receive uploads. Please contact us.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
+        case 'failed':
+            return __('Upload failed. Please try again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
+        default:
+            return '';
+    }
 }
 
 add_action('wc_ajax_ccd_upload_proof', 'ccd_ajax_upload_proof');
@@ -502,7 +529,7 @@ function ccd_render_order_proof_form($order_id)
 
     $has  = (bool) $order->get_meta('_ccd_payment_proof');
     $done = isset($_GET['ccd_proof']) ? sanitize_key(wp_unslash($_GET['ccd_proof'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only.
-    $msg  = isset($_GET['ccd_proof_msg']) ? sanitize_text_field(wp_unslash($_GET['ccd_proof_msg'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only.
+    $msg  = isset($_GET['ccd_proof_err']) ? ccd_proof_error_message(sanitize_key(wp_unslash($_GET['ccd_proof_err']))) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only, fixed codes.
 
     echo '<section class="ccd-order-proof">';
     echo '<h2>' . esc_html__('Payment screenshot', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') . '</h2>';
@@ -520,7 +547,8 @@ function ccd_render_order_proof_form($order_id)
     echo '<input type="hidden" name="action" value="ccd_order_proof">';
     echo '<input type="hidden" name="order_id" value="' . esc_attr($order->get_id()) . '">';
     echo '<input type="hidden" name="order_key" value="' . esc_attr($order->get_order_key()) . '">';
-    wp_nonce_field('ccd_order_proof_' . $order->get_id(), 'ccd_order_proof_nonce');
+    wp_nonce_field('ccd_order_proof_' . $order->get_id(), 'ccd_order_proof_nonce', false);
+    echo '<input type="hidden" name="ccd_back" value="' . esc_attr(is_wc_endpoint_url('view-order') ? 'account' : 'thankyou') . '">';
     echo '<input type="file" name="ccd_proof_file" accept="image/jpeg,image/png,image/webp,application/pdf" required> ';
     echo '<button type="submit" class="button">' . esc_html($has ? __('Replace screenshot', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') : __('Upload screenshot', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')) . '</button>';
     /* translators: %s: maximum file size */
@@ -544,17 +572,17 @@ function ccd_handle_order_proof()
         wp_die(esc_html__('This upload link is not valid. Please open your order again and retry.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), '', array('response' => 403, 'back_link' => true));
     }
 
-    $back = wp_get_referer() ? wp_get_referer() : $order->get_checkout_order_received_url();
-    $back = remove_query_arg(array('ccd_proof', 'ccd_proof_msg'), $back);
+    // Return to the page the form was on, built from the order (never from the request URL).
+    $back = (isset($_POST['ccd_back']) && 'account' === $_POST['ccd_back']) ? $order->get_view_order_url() : $order->get_checkout_order_received_url();
 
     if (!ccd_order_accepts_proof($order)) {
-        wp_safe_redirect(add_query_arg(array('ccd_proof' => 'error', 'ccd_proof_msg' => rawurlencode(__('This order can no longer receive uploads. Please contact us.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'))), $back));
+        wp_safe_redirect(add_query_arg(array('ccd_proof' => 'error', 'ccd_proof_err' => 'closed'), $back));
         exit;
     }
 
     $stored = ccd_proof_store_upload('ccd_proof_file', 'orders/', $order->get_id() . '-');
     if (is_wp_error($stored)) {
-        wp_safe_redirect(add_query_arg(array('ccd_proof' => 'error', 'ccd_proof_msg' => rawurlencode($stored->get_error_message())), $back));
+        wp_safe_redirect(add_query_arg(array('ccd_proof' => 'error', 'ccd_proof_err' => $stored->get_error_code()), $back));
         exit;
     }
 

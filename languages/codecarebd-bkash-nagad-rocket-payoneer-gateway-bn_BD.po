@@ -796,7 +796,7 @@ msgid "Merchant Name :"
 msgstr "মার্চেন্টের নাম :"
 
 #: includes/ccd-features.php:1581
-#: includes/ccd-payment-proof.php:398
+#: includes/ccd-payment-proof.php:425
 #: includes/classes/class-ccd-gateway-base.php:171
 msgid "required"
 msgstr "আবশ্যক"
@@ -850,14 +850,14 @@ msgid "Uploading..."
 msgstr "আপলোড হচ্ছে..."
 
 #: includes/ccd-payment-proof.php:128
-#: includes/ccd-payment-proof.php:405
+#: includes/ccd-payment-proof.php:432
 msgid "Uploaded:"
 msgstr "আপলোড হয়েছে:"
 
 #. translators: %s: maximum file size
 #: includes/ccd-payment-proof.php:131
-#: includes/ccd-payment-proof.php:407
-#: includes/ccd-payment-proof.php:527
+#: includes/ccd-payment-proof.php:434
+#: includes/ccd-payment-proof.php:555
 #, php-format
 msgid "JPG, PNG, WebP or PDF, max %s."
 msgstr "JPG, PNG, WebP বা PDF, সর্বোচ্চ %s।"
@@ -866,6 +866,7 @@ msgstr "JPG, PNG, WebP বা PDF, সর্বোচ্চ %s।"
 #: includes/ccd-payment-proof.php:159
 #: includes/ccd-payment-proof.php:183
 #: includes/ccd-payment-proof.php:189
+#: includes/ccd-payment-proof.php:217
 #: assets/js/blocks/ccd-blocks.js:110
 msgid "Upload failed. Please try again."
 msgstr "আপলোড ব্যর্থ হয়েছে। আবার চেষ্টা করুন।"
@@ -875,10 +876,12 @@ msgid "No file received."
 msgstr "কোনো ফাইল পাওয়া যায়নি।"
 
 #: includes/ccd-payment-proof.php:156
+#: includes/ccd-payment-proof.php:213
 msgid "Please choose a file to upload."
 msgstr "আপলোড করতে একটি ফাইল বাছাই করুন।"
 
 #: includes/ccd-payment-proof.php:168
+#: includes/ccd-payment-proof.php:209
 msgid "Please upload a JPG, PNG, WebP or PDF file."
 msgstr "অনুগ্রহ করে JPG, PNG, WebP বা PDF ফাইল আপলোড করুন।"
 
@@ -890,90 +893,94 @@ msgstr "এই PDF ফাইলটি নষ্ট বলে মনে হচ্
 msgid "This image file appears to be damaged."
 msgstr "এই ছবির ফাইলটি নষ্ট বলে মনে হচ্ছে।"
 
-#: includes/ccd-payment-proof.php:203
+#: includes/ccd-payment-proof.php:211
+msgid "This file appears to be damaged."
+msgstr "এই ফাইলটি নষ্ট বলে মনে হচ্ছে।"
+
+#: includes/ccd-payment-proof.php:215
+msgid "This order can no longer receive uploads. Please contact us."
+msgstr "এই অর্ডারে আর আপলোড করা যাবে না। অনুগ্রহ করে আমাদের সাথে যোগাযোগ করুন।"
+
+#: includes/ccd-payment-proof.php:230
 msgid "Your session has expired. Please reload the page and try again."
 msgstr "আপনার সেশনের মেয়াদ শেষ হয়েছে। পেজটি রিলোড করে আবার চেষ্টা করুন।"
 
-#: includes/ccd-payment-proof.php:209
+#: includes/ccd-payment-proof.php:236
 msgid "File upload is not enabled for this payment method."
 msgstr "এই পেমেন্ট পদ্ধতিতে ফাইল আপলোড চালু নেই।"
 
-#: includes/ccd-payment-proof.php:213
+#: includes/ccd-payment-proof.php:240
 msgid "Your cart is empty."
 msgstr "আপনার কার্ট খালি।"
 
-#: includes/ccd-payment-proof.php:219
+#: includes/ccd-payment-proof.php:246
 msgid "Too many uploads. Please contact us if you need help."
 msgstr "অনেক বেশি আপলোড হয়েছে। সাহায্য লাগলে আমাদের সাথে যোগাযোগ করুন।"
 
-#: includes/ccd-payment-proof.php:270
+#: includes/ccd-payment-proof.php:297
 #: assets/js/blocks/ccd-blocks.js:308
 msgid "Please upload a screenshot or PDF of your payment."
 msgstr "অনুগ্রহ করে আপনার পেমেন্টের স্ক্রিনশট বা PDF আপলোড করুন।"
 
-#: includes/ccd-payment-proof.php:276
+#: includes/ccd-payment-proof.php:303
 msgid "Your payment screenshot upload has expired. Please upload it again."
 msgstr "আপনার পেমেন্টের স্ক্রিনশট আপলোডের মেয়াদ শেষ হয়েছে। আবার আপলোড করুন।"
 
-#: includes/ccd-payment-proof.php:317
+#: includes/ccd-payment-proof.php:344
 msgid "Customer uploaded a payment screenshot."
 msgstr "কাস্টমার পেমেন্টের স্ক্রিনশট আপলোড করেছেন।"
 
-#: includes/ccd-payment-proof.php:347
+#: includes/ccd-payment-proof.php:374
 msgid "Sorry, you are not allowed to view this file."
 msgstr "দুঃখিত, আপনার এই ফাইল দেখার অনুমতি নেই।"
 
-#: includes/ccd-payment-proof.php:357
+#: includes/ccd-payment-proof.php:384
 msgid "File not found."
 msgstr "ফাইল পাওয়া যায়নি।"
 
-#: includes/ccd-payment-proof.php:398
+#: includes/ccd-payment-proof.php:425
 #: assets/js/blocks/ccd-blocks.js:256
 msgid "Payment screenshot or PDF"
 msgstr "পেমেন্টের স্ক্রিনশট বা PDF"
 
-#: includes/ccd-payment-proof.php:399
+#: includes/ccd-payment-proof.php:426
 #: assets/js/blocks/ccd-blocks.js:257
 msgid "Payment screenshot or PDF (optional)"
 msgstr "পেমেন্টের স্ক্রিনশট বা PDF (ঐচ্ছিক)"
 
-#: includes/ccd-payment-proof.php:508
+#: includes/ccd-payment-proof.php:535
 msgid "Payment screenshot"
 msgstr "পেমেন্টের স্ক্রিনশট"
 
-#: includes/ccd-payment-proof.php:510
+#: includes/ccd-payment-proof.php:537
 msgid "Thank you! Your payment screenshot was received."
 msgstr "ধন্যবাদ! আপনার পেমেন্টের স্ক্রিনশট পাওয়া গেছে।"
 
-#: includes/ccd-payment-proof.php:516
+#: includes/ccd-payment-proof.php:543
 msgid "We have your payment screenshot. You can upload a new one to replace it."
 msgstr "আপনার পেমেন্টের স্ক্রিনশট আমাদের কাছে আছে। বদলাতে চাইলে নতুন একটি আপলোড করতে পারেন।"
 
-#: includes/ccd-payment-proof.php:517
+#: includes/ccd-payment-proof.php:544
 msgid "Paid already? Upload a screenshot or PDF of your payment so we can confirm your order faster."
 msgstr "পেমেন্ট করে ফেলেছেন? পেমেন্টের স্ক্রিনশট বা PDF আপলোড করুন, যাতে আমরা দ্রুত আপনার অর্ডার নিশ্চিত করতে পারি।"
 
-#: includes/ccd-payment-proof.php:525
+#: includes/ccd-payment-proof.php:553
 msgid "Replace screenshot"
 msgstr "স্ক্রিনশট বদলান"
 
-#: includes/ccd-payment-proof.php:525
+#: includes/ccd-payment-proof.php:553
 msgid "Upload screenshot"
 msgstr "স্ক্রিনশট আপলোড করুন"
 
-#: includes/ccd-payment-proof.php:544
+#: includes/ccd-payment-proof.php:572
 msgid "This upload link is not valid. Please open your order again and retry."
 msgstr "এই আপলোড লিংকটি সঠিক নয়। আপনার অর্ডারটি আবার খুলে চেষ্টা করুন।"
 
-#: includes/ccd-payment-proof.php:551
-msgid "This order can no longer receive uploads. Please contact us."
-msgstr "এই অর্ডারে আর আপলোড করা যাবে না। অনুগ্রহ করে আমাদের সাথে যোগাযোগ করুন।"
-
-#: includes/ccd-payment-proof.php:573
+#: includes/ccd-payment-proof.php:601
 msgid "Customer replaced the payment screenshot after checkout."
 msgstr "চেকআউটের পর কাস্টমার পেমেন্টের স্ক্রিনশট বদলেছেন।"
 
-#: includes/ccd-payment-proof.php:574
+#: includes/ccd-payment-proof.php:602
 msgid "Customer uploaded a payment screenshot after checkout."
 msgstr "চেকআউটের পর কাস্টমার পেমেন্টের স্ক্রিনশট আপলোড করেছেন।"
 
