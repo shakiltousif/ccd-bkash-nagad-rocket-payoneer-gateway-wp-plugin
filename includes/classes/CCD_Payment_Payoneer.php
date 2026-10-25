@@ -22,6 +22,7 @@ class CCD_Payment_Payoneer extends WC_Payment_Gateway
         $this->has_fields = true;
 
         $this->ccd_payoneer_payment_options_fields();
+        $this->form_fields = ccd_extend_form_fields($this->id, $this->form_fields);
         $this->init_settings();
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -133,9 +134,7 @@ class CCD_Payment_Payoneer extends WC_Payment_Gateway
         
         // $bkash_charge = ($this->bkash_charge == 'yes') ? esc_html__(' Also note that 1.85% bKash "SEND MONEY" cost will be added with net price. Total amount you need to send us at', "stb") . ' ' . get_woocommerce_currency_symbol() . $woocommerce->cart->total : '';
         // echo wpautop(wptexturize(esc_html__($this->description, "ccd-payment-gateway-domain")) . $bkash_charge);
-        if (isset($this->ccd_payoneer_recipient_email)) {
-            echo wpautop(wptexturize("Payoneer Recipient Email : " . $this->ccd_payoneer_recipient_email));
-        }
+        ccd_render_account_box($this->id);
 
 ?>
 
@@ -210,7 +209,7 @@ class CCD_Payment_Payoneer extends WC_Payment_Gateway
         }
 
         // Reduce stock levels
-        $order->reduce_order_stock();
+        wc_reduce_stock_levels($order->get_id());
 
         // Remove cart
         $woocommerce->cart->empty_cart();
@@ -241,8 +240,8 @@ class CCD_Payment_Payoneer extends WC_Payment_Gateway
     {
         if ($order->get_payment_method() != $this->id)
             return;
-        if ($this->instructions && !$sent_to_admin && $this->id === $order->get_payment_method()) {
-            echo wpautop(wptexturize($this->instructions)) . PHP_EOL;
+        if ($this->ccd_payoneer_instructions && !$sent_to_admin && $this->id === $order->get_payment_method()) {
+            echo wpautop(wptexturize($this->ccd_payoneer_instructions)) . PHP_EOL;
         }
     }
 }

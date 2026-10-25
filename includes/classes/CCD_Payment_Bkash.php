@@ -28,6 +28,7 @@ class CCD_Payment_Bkash extends WC_Payment_Gateway
         $this->has_fields             = true;
 
         $this->ccd_bkash_payment_options_fields();
+        $this->form_fields = ccd_extend_form_fields($this->id, $this->form_fields);
         $this->init_settings();
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -103,13 +104,7 @@ class CCD_Payment_Bkash extends WC_Payment_Gateway
     {
         global $woocommerce;
 
-        $bkash_charge = '';
-
-        if (($this->bkash_charge == 'yes')) {
-            $bkash_charge = '<div class="ccd_extra_charge_note">' . wpautop(wptexturize(esc_html__(' Note: 1.85% bKash "Send Money" cost will be added with the net price. Total amount: ', "ccd-payment-gateway-domain") . ' ' . get_woocommerce_currency_symbol() . $woocommerce->cart->total)) . '</div>';
-        }
-
-        echo $bkash_charge;
+        ccd_render_charge_note($this->id);
 
         // Check if advance payment is enabled
         $advance_payment_enabled = get_option('ccd_enable_advance_payment', 'no') === 'yes';
@@ -166,9 +161,7 @@ class CCD_Payment_Bkash extends WC_Payment_Gateway
         }
 
         echo wpautop(wptexturize(esc_html__($this->description, "ccd-payment-gateway-domain")));
-        if (isset($this->bkash_account_type)) {
-            echo wpautop(wptexturize("bKash " . $this->bkash_account_type . " Number : " . $this->bkash_number));
-        }
+        ccd_render_account_box($this->id);
 
 ?>
 
@@ -243,7 +236,7 @@ class CCD_Payment_Bkash extends WC_Payment_Gateway
         }
 
         // Reduce stock levels
-        $order->reduce_order_stock();
+        wc_reduce_stock_levels($order->get_id());
 
         // Remove cart
         $woocommerce->cart->empty_cart();

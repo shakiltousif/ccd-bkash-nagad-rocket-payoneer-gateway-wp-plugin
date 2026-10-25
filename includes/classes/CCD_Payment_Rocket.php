@@ -24,6 +24,7 @@ class CCD_Payment_Rocket extends WC_Payment_Gateway
         $this->has_fields = true;
 
         $this->ccd_rocket_payment_options_fields();
+        $this->form_fields = ccd_extend_form_fields($this->id, $this->form_fields);
         $this->init_settings();
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -101,13 +102,7 @@ class CCD_Payment_Rocket extends WC_Payment_Gateway
 
         global $woocommerce;
 
-        $ccd_rocket_charge = '';
-
-        if (($this->ccd_rocket_charge == 'yes')) {
-            $ccd_rocket_charge = '<div class="ccd_extra_charge_note">' . wpautop(wptexturize(esc_html__(' Note: 1.85% Rocket "Send Money" cost will be added with the net price. Total amount: ', "ccd-payment-gateway-domain") . ' ' . get_woocommerce_currency_symbol() . $woocommerce->cart->total)) . '</div>';
-        }
-
-        echo $ccd_rocket_charge;
+        ccd_render_charge_note($this->id);
 
         // Check if advance payment is enabled
         $advance_payment_enabled = get_option('ccd_enable_advance_payment', 'no') === 'yes';
@@ -163,11 +158,8 @@ class CCD_Payment_Rocket extends WC_Payment_Gateway
             }
         }
 
-        echo wpautop(wptexturize(esc_html__($this->description, "ccd-payment-gateway-domain")) . $ccd_rocket_charge);
-
-        if (isset($this->ccd_rocket_account_type)) {
-            echo wpautop(wptexturize("Rocket " . $this->ccd_rocket_account_type . " Number : " . $this->ccd_rocket_number));
-        }
+        echo wpautop(wptexturize(esc_html__($this->description, "ccd-payment-gateway-domain")));
+        ccd_render_account_box($this->id);
 ?>
         <div class="payment_box_ccd_child">
             <table>
@@ -239,7 +231,7 @@ class CCD_Payment_Rocket extends WC_Payment_Gateway
         }
 
         // Reduce stock levels
-        $order->reduce_order_stock();
+        wc_reduce_stock_levels($order->get_id());
 
         // Remove cart
         $woocommerce->cart->empty_cart();

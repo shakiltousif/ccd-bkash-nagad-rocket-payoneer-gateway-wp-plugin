@@ -24,6 +24,7 @@ class CCD_Payment_Nagad extends WC_Payment_Gateway
         $this->has_fields = true;
 
         $this->ccd_nagad_payment_options_fields();
+        $this->form_fields = ccd_extend_form_fields($this->id, $this->form_fields);
         $this->init_settings();
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -100,13 +101,7 @@ class CCD_Payment_Nagad extends WC_Payment_Gateway
     {
         global $woocommerce;
 
-        $ccd_nagad_charge = '';
-
-        if (($this->ccd_nagad_charge == 'yes')) {
-            $ccd_nagad_charge = '<div class="ccd_extra_charge_note">' . wpautop(wptexturize(esc_html__(' Note: 1.45% Nagad "Send Money" cost will be added with the net price. Total amount: ', "ccd-payment-gateway-domain") . ' ' . get_woocommerce_currency_symbol() . $woocommerce->cart->total)) . '</div>';
-        }
-
-        echo $ccd_nagad_charge;
+        ccd_render_charge_note($this->id);
 
         // Check if advance payment is enabled
         $advance_payment_enabled = get_option('ccd_enable_advance_payment', 'no') === 'yes';
@@ -163,10 +158,7 @@ class CCD_Payment_Nagad extends WC_Payment_Gateway
         }
 
         echo wpautop(wptexturize(esc_html__($this->description, "ccd-payment-gateway-domain")));
-
-        if (isset($this->ccd_nagad_account_type)) {
-            echo wpautop(wptexturize("Nagad " . $this->ccd_nagad_account_type . " Number : " . $this->ccd_nagad_number));
-        }
+        ccd_render_account_box($this->id);
 ?>
         <div class="payment_box_ccd_child">
             <table>
@@ -238,7 +230,7 @@ class CCD_Payment_Nagad extends WC_Payment_Gateway
         }
 
         // Reduce stock levels
-        $order->reduce_order_stock();
+        wc_reduce_stock_levels($order->get_id());
 
         // Remove cart
         $woocommerce->cart->empty_cart();
@@ -269,8 +261,8 @@ class CCD_Payment_Nagad extends WC_Payment_Gateway
     {
         if ($order->get_payment_method() != $this->id)
             return;
-        if ($this->instructions && !$sent_to_admin && $this->id === $order->get_payment_method()) {
-            echo wpautop(wptexturize($this->instructions)) . PHP_EOL;
+        if ($this->ccd_nagad_instructions && !$sent_to_admin && $this->id === $order->get_payment_method()) {
+            echo wpautop(wptexturize($this->ccd_nagad_instructions)) . PHP_EOL;
         }
     }
 }

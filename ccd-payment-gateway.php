@@ -5,24 +5,63 @@
  * Plugin URI: https://wordpress.org/plugins/codecarebd-bkash-nagad-rocket-payoneer-gateway
  * Description: CodeCareBD - Bkash, Nagad, Rocket, Payoneer Gateway plugin is for WooCommerce. This plugin will help you to integrate Bkash, Nagad, Rocket, and Payoneer Payment Gateway.
  * Author: Shakil Ahamed
- * Version: 0.9
- * Tested up to: 6.7.1
+ * Version: 1.4.0
+ * Requires at least: 6.3
+ * Requires PHP: 7.3
+ * Tested up to: 7.1
+ * Requires Plugins: woocommerce
+ * WC requires at least: 6.3
+ * WC tested up to: 11.2
  * Author URI: https://shakilahamed.com
  * Text Domain: ccd-payment-gateway-domain
- * 
- * Woocommerce tested up to: 9.5.1
+ * License: GPLv2 or later
+ * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  *
  */
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 // Define plugin constants
-define('CCD_PAYMENT_GATEWAY_VERSION', '0.9');
+define('CCD_PAYMENT_GATEWAY_VERSION', '1.4.0');
 define('CCD_PAYMENT_GATEWAY_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CCD_PAYMENT_GATEWAY_PLUGIN_URL', plugin_dir_url(__FILE__));
 
+register_activation_hook(__FILE__, function () {
+    if (! class_exists('\Shakvaro\WP\Insights\Insights', false)) {
+        require_once __DIR__ . '/vendor/shakvaro-wp-insights/src/Insights.php';
+    }
+    \Shakvaro\WP\Insights\Insights::mark_activated('codecarebd-bkash-nagad-rocket-payoneer-gateway');
+});
+
 //include plugin modules
 include_once(ABSPATH . 'wp-admin/includes/plugin.php');
+
+/**
+ * Declare WooCommerce feature compatibility.
+ * - custom_order_tables (HPOS): plugin uses order CRUD for all order meta.
+ * - cart_checkout_blocks: block-based checkout integration is provided.
+ */
+add_action('before_woocommerce_init', 'ccd_declare_wc_feature_compatibility');
+function ccd_declare_wc_feature_compatibility()
+{
+    if (class_exists('\Automattic\WooCommerce\Utilities\FeaturesUtil')) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('cart_checkout_blocks', __FILE__, true);
+    }
+}
+
+/**
+ * Register block-based (Cart & Checkout Blocks) payment method integrations.
+ */
+add_action('woocommerce_blocks_payment_method_type_registration', 'ccd_register_block_payment_methods');
+function ccd_register_block_payment_methods($payment_method_registry)
+{
+    require_once __DIR__ . '/includes/blocks/class-ccd-blocks-support.php';
+
+    foreach (array('ccd_bkash', 'ccd_nagad', 'ccd_rocket', 'ccd_payoneer') as $ccd_gateway_id) {
+        $payment_method_registry->register(new CCD_Blocks_Support($ccd_gateway_id));
+    }
+}
 
 //checking if elementor active
 if (is_plugin_active('woocommerce/woocommerce.php')) {
@@ -39,7 +78,13 @@ if (is_plugin_active('woocommerce/woocommerce.php')) {
 
     add_filter('woocommerce_account_orders_columns', 'ccd_admin_new_column_function');
 
+    add_action('woocommerce_my_account_my_orders_column_account_no', 'ccd_account_orders_account_no_column');
+
+    add_action('woocommerce_my_account_my_orders_column_tran_id', 'ccd_account_orders_tran_id_column');
+
     add_filter('manage_woocommerce_page_wc-orders_columns', 'ccd_admin_new_column_function_new_method');
+
+    add_filter('manage_edit-shop_order_columns', 'ccd_admin_new_column_function_new_method');
 
     add_action('manage_shop_order_posts_custom_column', 'ccd_admin_column_value_function', 2);
 
@@ -62,56 +107,8 @@ if (is_plugin_active('woocommerce/woocommerce.php')) {
     add_action('admin_init', 'ccd_register_advance_payment_settings');
 
 
-    /**
-     * If charge is activated
-     */
-    $bkash_charge = get_option('woocommerce_ccd_bkash_settings');
-    $nagad_charge = get_option('woocommerce_ccd_nagad_settings');
-    $rocket_charge = get_option('woocommerce_ccd_rocket_settings');
-    if (isset($bkash_charge['bkash_charge']) || isset($nagad_charge['ccd_nagad_charge']) || isset($rocket_charge['ccd_rocket_charge'])) {
-        if ($bkash_charge['bkash_charge'] == 'yes' || $nagad_charge['ccd_nagad_charge'] == 'yes' || $rocket_charge['ccd_rocket_charge'] == 'yes') {
-
-
-            add_action('woocommerce_cart_calculate_fees', 'ccd_payment_charge_calculator');
-            function ccd_payment_charge_calculator()
-            {
-
-                global $woocommerce;
-                $available_gateways = $woocommerce->payment_gateways->get_available_payment_gateways();
-                $current_gateway = '';
-
-                if (!empty($available_gateways)) {
-                    if (isset($woocommerce->session->chosen_payment_method) && isset($available_gateways[$woocommerce->session->chosen_payment_method])) {
-                        $current_gateway = $available_gateways[$woocommerce->session->chosen_payment_method];
-                    }
-                }
-
-                if ($current_gateway != '') {
-
-                    $current_gateway_id = $current_gateway->id;
-
-                    if (is_admin() && !defined('DOING_AJAX')) {
-                        return;
-                    }
-
-
-                    if ($current_gateway_id == 'ccd_bkash') {
-                        $percentage = 0.0185;
-                        $surcharge = round($woocommerce->cart->cart_contents_total * $percentage);
-                        $woocommerce->cart->add_fee(esc_html__('bKash Charge', 'ccd-payment-gateway-domain'), $surcharge, true, '');
-                    } else if ($current_gateway_id == 'ccd_nagad') {
-                        $percentage = 0.0145;
-                        $surcharge = round($woocommerce->cart->cart_contents_total * $percentage);
-                        $woocommerce->cart->add_fee(esc_html__('Nagad Charge', 'ccd-payment-gateway-domain'), $surcharge, true, '');
-                    } else if ($current_gateway_id == 'ccd_rocket') {
-                        $percentage = 0.018;
-                        $surcharge = round($woocommerce->cart->cart_contents_total * $percentage);
-                        $woocommerce->cart->add_fee(esc_html__('Rocket Charge', 'ccd-payment-gateway-domain'), $surcharge, true, '');
-                    }
-                }
-            }
-        }
-    }
+    // Shared features: charge, duplicate transaction ID check, account box, review notice.
+    require_once __DIR__ . '/includes/ccd-features.php';
 } else {
 
     //notice if Woocommerce isn't installed properly
@@ -162,53 +159,196 @@ function ccd_payment_options_init()
 
 
 /**
- * Update bKash field to database
+ * Field map: gateway id => [ POST field name => order meta key ].
+ *
+ * Single source of truth used by the classic checkout, the block (Store API)
+ * checkout, validation and admin readers. The POST field names and meta keys
+ * are kept exactly as released in earlier versions for backward compatibility.
+ */
+function ccd_payment_field_map()
+{
+    return array(
+        'ccd_bkash' => array(
+            'bkash_number'             => '_bkash_number',
+            'bkash_transaction_id'     => '_bkash_transaction',
+        ),
+        'ccd_nagad' => array(
+            'ccd_nagad_number'         => '_ccd_nagad_number',
+            'ccd_nagad_transaction_id' => '_ccd_nagad_transaction',
+        ),
+        'ccd_rocket' => array(
+            'ccd_rocket_number'         => '_ccd_rocket_number',
+            'ccd_rocket_transaction_id' => '_ccd_rocket_transaction',
+        ),
+        'ccd_payoneer' => array(
+            'ccd_payoneeer_sender_email' => '_ccd_payoneeer_sender_email',
+            'ccd_payoneer_transaction_id' => '_ccd_payoneer_transaction_id',
+        ),
+    );
+}
+
+/**
+ * Save the submitted payment fields to the order using CRUD (HPOS-safe).
+ *
+ * @param WC_Order $order  Order object.
+ * @param string   $method Gateway id.
+ * @param array    $data   Associative array of submitted field values.
+ */
+function ccd_save_payment_fields($order, $method, $data)
+{
+    $map = ccd_payment_field_map();
+
+    if (!is_a($order, 'WC_Order') || !isset($map[$method])) {
+        return;
+    }
+
+    foreach ($map[$method] as $field => $meta_key) {
+        if (!isset($data[$field])) {
+            continue;
+        }
+        $value = ('ccd_payoneeer_sender_email' === $field)
+            ? sanitize_email($data[$field])
+            : sanitize_text_field($data[$field]);
+        $order->update_meta_data($meta_key, $value);
+    }
+
+    $order->save();
+}
+
+/**
+ * Validate submitted payment fields. Returns an array of error messages
+ * (empty when valid). Shared by classic and block checkout.
+ *
+ * @param string $method Gateway id.
+ * @param array  $data   Associative array of submitted field values.
+ * @param int    $exclude_order_id Order being placed (ignored by the duplicate transaction ID check).
+ * @return string[]
+ */
+function ccd_validate_payment_fields($method, $data, $exclude_order_id = 0)
+{
+    $errors = array();
+
+    if ($method === 'ccd_bkash' || $method === 'ccd_nagad' || $method === 'ccd_rocket') {
+        $labels = array(
+            'ccd_bkash'  => array('bKash', 'bkash_number', 'bkash_transaction_id'),
+            'ccd_nagad'  => array('Nagad', 'ccd_nagad_number', 'ccd_nagad_transaction_id'),
+            'ccd_rocket' => array('Rocket', 'ccd_rocket_number', 'ccd_rocket_transaction_id'),
+        );
+        list($label, $number_field, $trx_field) = $labels[$method];
+
+        $number = isset($data[$number_field]) ? sanitize_text_field($data[$number_field]) : '';
+        $trx    = isset($data[$trx_field]) ? sanitize_text_field($data[$trx_field]) : '';
+
+        if ($number === '') {
+            /* translators: %s: payment method label */
+            $errors[] = sprintf(__('Please enter your %s number.', 'ccd-payment-gateway-domain'), $label);
+        } elseif (!preg_match('/^[0-9]{11}$/', $number)) {
+            /* translators: %s: payment method label */
+            $errors[] = sprintf(__('Please enter a valid %s phone number.', 'ccd-payment-gateway-domain'), $label);
+        }
+
+        if ($trx === '') {
+            /* translators: %s: payment method label */
+            $errors[] = sprintf(__('Please enter your %s transaction ID.', 'ccd-payment-gateway-domain'), $label);
+        } elseif (strlen($trx) < 5) {
+            /* translators: %s: payment method label */
+            $errors[] = sprintf(__('Please enter a valid %s transaction ID.', 'ccd-payment-gateway-domain'), $label);
+        }
+    } elseif ($method === 'ccd_payoneer') {
+        $email = isset($data['ccd_payoneeer_sender_email']) ? sanitize_email($data['ccd_payoneeer_sender_email']) : '';
+        $trx   = isset($data['ccd_payoneer_transaction_id']) ? sanitize_text_field($data['ccd_payoneer_transaction_id']) : '';
+
+        if ($email === '') {
+            $errors[] = __('Please enter your Payoneer sender email.', 'ccd-payment-gateway-domain');
+        } elseif (!is_email($email)) {
+            $errors[] = __('Please enter a valid Payoneer sender email.', 'ccd-payment-gateway-domain');
+        }
+
+        if ($trx === '') {
+            $errors[] = __('Please enter your Payoneer transaction ID.', 'ccd-payment-gateway-domain');
+        } elseif (strlen($trx) < 5) {
+            $errors[] = __('Please enter a valid Payoneer transaction ID.', 'ccd-payment-gateway-domain');
+        }
+    }
+
+    if (empty($errors) && function_exists('ccd_duplicate_transaction_errors')) {
+        $errors = ccd_duplicate_transaction_errors($method, $data, $exclude_order_id);
+    }
+
+    return $errors;
+}
+
+/**
+ * Classic checkout: save payment fields to the order (HPOS-safe CRUD).
  */
 function ccd_bkash_additional_fields_update_function($order_id)
 {
-
-    if ($_POST['payment_method'] == 'ccd_bkash') {
-        $bkash_number = sanitize_text_field($_POST['bkash_number']);
-        $bkash_transaction_id = sanitize_text_field($_POST['bkash_transaction_id']);
-
-        $number = isset($bkash_number) ? $bkash_number : '';
-        $transaction = isset($bkash_transaction_id) ? $bkash_transaction_id : '';
-
-        update_post_meta($order_id, '_bkash_number', $number);
-        update_post_meta($order_id, '_bkash_transaction', $transaction);
-    } else if ($_POST['payment_method'] == 'ccd_nagad') {
-
-        $nagad_number = sanitize_text_field($_POST['ccd_nagad_number']);
-        $nagad_transaction_id = sanitize_text_field($_POST['ccd_nagad_transaction_id']);
-
-        $number = isset($nagad_number) ? $nagad_number : '';
-        $transaction = isset($nagad_transaction_id) ? $nagad_transaction_id : '';
-
-        update_post_meta($order_id, '_ccd_nagad_number', $number);
-        update_post_meta($order_id, '_ccd_nagad_transaction', $transaction);
-    } else if ($_POST['payment_method'] == 'ccd_rocket') {
-
-        $rocket_number = sanitize_text_field($_POST['ccd_rocket_number']);
-        $rocket_transaction_id = sanitize_text_field($_POST['ccd_rocket_transaction_id']);
-
-        $number = isset($rocket_number) ? $rocket_number : '';
-        $transaction = isset($rocket_transaction_id) ? $rocket_transaction_id : '';
-
-        update_post_meta($order_id, '_ccd_rocket_number', $number);
-        update_post_meta($order_id, '_ccd_rocket_transaction', $transaction);
-    } else if ($_POST['payment_method'] == 'ccd_payoneer') {
-
-        $rocket_number = sanitize_text_field($_POST['ccd_payoneeer_sender_email']);
-        $rocket_transaction_id = sanitize_text_field($_POST['ccd_payoneer_transaction_id']);
-
-        $number = isset($rocket_number) ? $rocket_number : '';
-        $transaction = isset($rocket_transaction_id) ? $rocket_transaction_id : '';
-
-        update_post_meta($order_id, '_ccd_payoneeer_sender_email', $number);
-        update_post_meta($order_id, '_ccd_payoneer_transaction_id', $transaction);
-    } else {
+    if (!isset($_POST['payment_method'])) {
         return;
     }
+
+    $method = sanitize_text_field(wp_unslash($_POST['payment_method']));
+    $map    = ccd_payment_field_map();
+
+    if (!isset($map[$method])) {
+        return;
+    }
+
+    $order = wc_get_order($order_id);
+    if (!$order) {
+        return;
+    }
+
+    // Nonce is verified by WooCommerce core before this checkout hook fires.
+    $data = array();
+    foreach (array_keys($map[$method]) as $field) {
+        if (isset($_POST[$field])) {
+            $data[$field] = sanitize_text_field(wp_unslash($_POST[$field])); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        }
+    }
+
+    ccd_save_payment_fields($order, $method, $data);
+}
+
+/**
+ * Block (Store API) checkout: validate then save payment fields.
+ *
+ * The classic `woocommerce_checkout_process` and
+ * `woocommerce_checkout_update_order_meta` hooks do NOT fire for the block
+ * checkout, so the Store API request hook handles both validation and saving.
+ */
+add_action('woocommerce_store_api_checkout_update_order_from_request', 'ccd_blocks_update_order_from_request', 10, 2);
+function ccd_blocks_update_order_from_request($order, $request)
+{
+    $method = is_callable(array($order, 'get_payment_method')) ? $order->get_payment_method() : '';
+    $map    = ccd_payment_field_map();
+
+    if (!isset($map[$method])) {
+        return;
+    }
+
+    // Collect the submitted payment data (array of {key, value}).
+    $payment_data = array();
+    $raw          = isset($request['payment_data']) ? $request['payment_data'] : array();
+    if (is_array($raw)) {
+        foreach ($raw as $item) {
+            if (isset($item['key'])) {
+                $payment_data[$item['key']] = isset($item['value']) ? $item['value'] : '';
+            }
+        }
+    }
+
+    // Validate; throw to abort the order with a customer-visible message.
+    $errors = ccd_validate_payment_fields($method, $payment_data, $order->get_id());
+    if (!empty($errors)) {
+        throw new \Automattic\WooCommerce\StoreApi\Exceptions\RouteException(
+            'ccd_payment_validation_error',
+            esc_html(implode(' ', $errors)),
+            400
+        );
+    }
+
+    ccd_save_payment_fields($order, $method, $payment_data);
 }
 
 
@@ -217,81 +357,51 @@ function ccd_bkash_additional_fields_update_function($order_id)
  */
 function ccd_bkash_admin_order_data_function($order)
 {
-    $account_title = '';
-
-    $account = '';
-
-    $transaction = '';
-
-    $img_url = '';
-
-    if ($order->get_payment_method() == 'ccd_bkash') {
-
-        if (get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_bkash_number', true)) {
-            $account = sanitize_text_field(get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_bkash_number', true));
-        }
-
-
-        if (get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_bkash_transaction', true)) {
-            $transaction = sanitize_text_field(get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_bkash_transaction', true));
-        }
-
-        $account_title = 'bKash No.';
-
-        $img_url = plugins_url('assets/img/bkash.png', __FILE__);
-    } else if ($order->get_payment_method() == 'ccd_nagad') {
-        if (get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_ccd_nagad_number', true)) {
-            $account = sanitize_text_field(get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_ccd_nagad_number', true));
-        }
-
-        if (get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_ccd_nagad_transaction', true)) {
-            $transaction = sanitize_text_field(get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_ccd_nagad_transaction', true));
-        }
-        $account_title = 'Nagad No.';
-
-        $img_url = plugins_url('assets/img/nagad.png', __FILE__);
-    } else if ($order->get_payment_method() == 'ccd_rocket') {
-        if (get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_ccd_rocket_number', true)) {
-            $account = sanitize_text_field(get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_ccd_rocket_number', true));
-        }
-
-        if (get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_ccd_rocket_transaction', true)) {
-            $transaction = sanitize_text_field(get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_ccd_rocket_transaction', true));
-        }
-        $account_title = 'Rocket No.';
-
-        $img_url = plugins_url('assets/img/rocket.png', __FILE__);
-    } else if ($order->get_payment_method() == 'ccd_payoneer') {
-        if (get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_ccd_payoneeer_sender_email', true)) {
-            $account = sanitize_text_field(get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_ccd_payoneeer_sender_email', true));
-        }
-
-        if (get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_ccd_payoneer_transaction_id', true)) {
-            $transaction = sanitize_text_field(get_post_meta(isset($_GET['id']) ? $_GET['id'] : $_GET['post'], '_ccd_payoneer_transaction_id', true));
-        }
-        $account_title = 'Payoneer Email: ';
-
-        $img_url = plugins_url('assets/img/payoneer.png', __FILE__);
-    } else {
+    if (!is_a($order, 'WC_Order')) {
+        $order = wc_get_order($order);
+    }
+    if (!$order) {
         return;
     }
 
+    $method = $order->get_payment_method();
+    $map    = ccd_payment_field_map();
 
+    if (!isset($map[$method])) {
+        return;
+    }
 
+    $meta_keys   = array_values($map[$method]);
+    $account     = sanitize_text_field($order->get_meta($meta_keys[0]));
+    $transaction = sanitize_text_field($order->get_meta($meta_keys[1]));
+
+    $titles  = array(
+        'ccd_bkash'    => 'bKash No.',
+        'ccd_nagad'    => 'Nagad No.',
+        'ccd_rocket'   => 'Rocket No.',
+        'ccd_payoneer' => 'Payoneer Email: ',
+    );
+    $images  = array(
+        'ccd_bkash'    => 'assets/img/bkash.png',
+        'ccd_nagad'    => 'assets/img/nagad.png',
+        'ccd_rocket'   => 'assets/img/rocket.png',
+        'ccd_payoneer' => 'assets/img/payoneer.png',
+    );
+    $account_title = $titles[$method];
+    $img_url       = plugins_url($images[$method], __FILE__);
 
     // Check if advance payment is enabled and used
-    $order_id = method_exists($order, 'get_id') ? $order->get_id() : (isset($_GET['id']) ? $_GET['id'] : (isset($_GET['post']) ? $_GET['post'] : 0));
-    $is_advance_payment = get_post_meta($order_id, '_ccd_advance_payment_received', true);
-    $original_total = get_post_meta($order_id, '_ccd_original_order_total', true);
-    $advance_amount = get_post_meta($order_id, '_ccd_advance_amount_paid', true);
-    $remaining_amount = get_post_meta($order_id, '_ccd_remaining_amount', true);
+    $is_advance_payment = $order->get_meta('_ccd_advance_payment_received');
+    $original_total = $order->get_meta('_ccd_original_order_total');
+    $advance_amount = $order->get_meta('_ccd_advance_amount_paid');
+    $remaining_amount = $order->get_meta('_ccd_remaining_amount');
 ?>
     <div class="form-field form-field-wide">
         <img src='<?php echo esc_attr($img_url); ?>' width="150" />
         <table class="wp-list-table widefat fixed striped posts">
             <tbody>
                 <tr>
-                    <th><strong><?php esc_html_e($account_title, 'ccd-payment-gateway-domain'); ?></strong></th>
+                    <th><strong><?php echo esc_html($account_title); ?></strong></th>
                     <td>: <?php echo esc_attr($account); ?></td>
                 </tr>
                 <tr>
@@ -330,70 +440,38 @@ function ccd_bkash_admin_order_data_function($order)
  */
 function ccd_additional_info_order_review_fields_function($order)
 {
-    global $wp;
-
-    //Order ID
-    $order_id  = absint($wp->query_vars['order-received']);
-
-    $account_title = '';
-    $account = '';
-    $transaction = '';
-
-    if ($order->get_payment_method() == 'ccd_bkash') {
-
-        if (get_post_meta($order_id, '_bkash_number', true)) {
-
-            $account = sanitize_text_field(get_post_meta($order_id, '_bkash_number', true));
-        }
-        if (get_post_meta($order_id, '_bkash_transaction', true)) {
-            $transaction = sanitize_text_field(get_post_meta($order_id, '_bkash_transaction', true));
-        }
-
-        $account_title = 'bKash No:';
-    } else if ($order->get_payment_method() == 'ccd_nagad') {
-        if (get_post_meta($order_id, '_ccd_nagad_number', true)) {
-
-            $account = sanitize_text_field(get_post_meta($order_id, '_ccd_nagad_number', true));
-        }
-        if (get_post_meta($order_id, '_ccd_nagad_transaction', true)) {
-            $transaction = sanitize_text_field(get_post_meta($order_id, '_ccd_nagad_transaction', true));
-        }
-
-        $account_title = 'Nagad No:';
-    } else if ($order->get_payment_method() == 'ccd_rocket') {
-        if (get_post_meta($order_id, '_ccd_rocket_number', true)) {
-
-            $account = sanitize_text_field(get_post_meta($order_id, '_ccd_rocket_number', true));
-        }
-        if (get_post_meta($order_id, '_ccd_rocket_transaction', true)) {
-            $transaction = sanitize_text_field(get_post_meta($order_id, '_ccd_rocket_transaction', true));
-        }
-
-        $account_title = 'Rocket No:';
-    } else if ($order->get_payment_method() == 'ccd_payoneer') {
-        if (get_post_meta($order_id, '_ccd_payoneeer_sender_email', true)) {
-
-            $account = sanitize_text_field(get_post_meta($order_id, '_ccd_payoneeer_sender_email', true));
-        }
-        if (get_post_meta($order_id, '_ccd_payoneer_transaction_id', true)) {
-            $transaction = sanitize_text_field(get_post_meta($order_id, '_ccd_payoneer_transaction_id', true));
-        }
-
-        $account_title = 'Payoneer Email:';
-    } else {
+    if (!is_a($order, 'WC_Order')) {
         return;
     }
 
+    $method = $order->get_payment_method();
+    $map    = ccd_payment_field_map();
+
+    if (!isset($map[$method])) {
+        return;
+    }
+
+    $meta_keys   = array_values($map[$method]);
+    $account     = sanitize_text_field($order->get_meta($meta_keys[0]));
+    $transaction = sanitize_text_field($order->get_meta($meta_keys[1]));
+
+    $titles = array(
+        'ccd_bkash'    => 'bKash No:',
+        'ccd_nagad'    => 'Nagad No:',
+        'ccd_rocket'   => 'Rocket No:',
+        'ccd_payoneer' => 'Payoneer Email:',
+    );
+    $account_title = $titles[$method];
 
     // Check if advance payment is enabled and used
-    $is_advance_payment = get_post_meta($order_id, '_ccd_advance_payment_received', true);
-    $original_total = get_post_meta($order_id, '_ccd_original_order_total', true);
-    $advance_amount = get_post_meta($order_id, '_ccd_advance_amount_paid', true);
-    $remaining_amount = get_post_meta($order_id, '_ccd_remaining_amount', true);
+    $is_advance_payment = $order->get_meta('_ccd_advance_payment_received');
+    $original_total = $order->get_meta('_ccd_original_order_total');
+    $advance_amount = $order->get_meta('_ccd_advance_amount_paid');
+    $remaining_amount = $order->get_meta('_ccd_remaining_amount');
 ?>
     <table>
         <tr>
-            <th><?php esc_html_e($account_title, 'ccd-payment-gateway-domain'); ?></th>
+            <th><?php echo esc_html($account_title); ?></th>
             <td><?php echo esc_attr($account); ?></td>
         </tr>
         <tr>
@@ -429,11 +507,17 @@ function ccd_admin_new_column_function($columns)
 {
 
     $new_columns = (is_array($columns)) ? $columns : array();
-    unset($new_columns['order_actions']);
+
+    // WooCommerce uses 'order-actions' (hyphen) as the key; keep it as the last column.
+    $actions = isset($new_columns['order-actions']) ? $new_columns['order-actions'] : null;
+    unset($new_columns['order-actions']);
+
     $new_columns['account_no']     = esc_html__('Account No.', 'ccd-payment-gateway-domain');
     $new_columns['tran_id']     = esc_html__('Transaction ID', 'ccd-payment-gateway-domain');
 
-    $new_columns['order_actions'] = $columns['order_actions'];
+    if (null !== $actions) {
+        $new_columns['order-actions'] = $actions;
+    }
     return $new_columns;
 }
 
@@ -459,81 +543,102 @@ function ccd_admin_new_column_function_new_method($columns)
 /**
  * Load data in new column
  */
-function ccd_admin_column_value_function($column)
+/**
+ * Resolve [account_no, tran_id] display strings for an order using CRUD meta.
+ *
+ * @param WC_Order $order Order object.
+ * @return array{0:string,1:string}
+ */
+function ccd_get_order_column_values($order)
 {
+    if (!is_a($order, 'WC_Order')) {
+        return array('', '');
+    }
 
-    global $post;
+    $labels = array(
+        'ccd_bkash'    => 'Bkash',
+        'ccd_nagad'    => 'Nagad',
+        'ccd_rocket'   => 'Rocket',
+        'ccd_payoneer' => 'Payoneer',
+    );
+    $map = ccd_payment_field_map();
 
     $account = '';
-    if (get_post_meta($post->ID, '_bkash_number', true)) {
-        $account = sanitize_text_field(get_post_meta($post->ID, '_bkash_number', true)) . ' ( Bkash )';
-    } else if (get_post_meta($post->ID, '_ccd_nagad_number', true)) {
-        $account = sanitize_text_field(get_post_meta($post->ID, '_ccd_nagad_number', true)) . ' ( Nagad )';
-    } else if (get_post_meta($post->ID, '_ccd_rocket_number', true)) {
-        $account = sanitize_text_field(get_post_meta($post->ID, '_ccd_rocket_number', true)) . ' ( Rocket )';
-    } else if (get_post_meta($post->ID, '_ccd_payoneeer_sender_email', true)) {
-        $account = sanitize_text_field(get_post_meta($post->ID, '_ccd_payoneeer_sender_email', true)) . ' ( Payoneer )';
-    }
-
     $tran_id = '';
 
-    if (get_post_meta($post->ID, '_bkash_transaction', true)) {
-        $tran_id = sanitize_text_field(get_post_meta($post->ID, '_bkash_transaction', true));
-    } else if (get_post_meta($post->ID, '_ccd_nagad_transaction', true)) {
-        $tran_id = sanitize_text_field(get_post_meta($post->ID, '_ccd_nagad_transaction', true));
-    } else if (get_post_meta($post->ID, '_ccd_rocket_transaction', true)) {
-        $tran_id = sanitize_text_field(get_post_meta($post->ID, '_ccd_rocket_transaction', true));
-    } else if (get_post_meta($post->ID, '_ccd_payoneer_transaction_id', true)) {
-        $tran_id = sanitize_text_field(get_post_meta($post->ID, '_ccd_payoneer_transaction_id', true));
+    foreach ($map as $method => $fields) {
+        $meta_keys = array_values($fields);
+        $number    = $order->get_meta($meta_keys[0]);
+        if ($number !== '') {
+            $account = sanitize_text_field($number) . ' ( ' . $labels[$method] . ' )';
+            $tran_id = sanitize_text_field($order->get_meta($meta_keys[1]));
+            break;
+        }
     }
 
-    if ($column == 'account_no') {
-        echo esc_attr($account);
+    return array($account, $tran_id);
+}
+
+/**
+ * Legacy posts-table order column output.
+ */
+function ccd_admin_column_value_function($column)
+{
+    global $post;
+
+    if (!$post || ($column !== 'account_no' && $column !== 'tran_id')) {
+        return;
     }
-    if ($column == 'tran_id') {
+
+    $order = wc_get_order($post->ID);
+    if (!$order) {
+        return;
+    }
+
+    list($account, $tran_id) = ccd_get_order_column_values($order);
+
+    if ($column === 'account_no') {
+        echo esc_attr($account);
+    } elseif ($column === 'tran_id') {
         echo esc_attr($tran_id);
     }
 }
 
 
+/**
+ * My Account orders table column output.
+ */
+function ccd_account_orders_account_no_column($order)
+{
+    list($account) = ccd_get_order_column_values($order);
+    echo esc_html($account);
+}
 
-// new method
+function ccd_account_orders_tran_id_column($order)
+{
+    list(, $tran_id) = ccd_get_order_column_values($order);
+    echo esc_html($tran_id);
+}
+
+
+// HPOS (wc-orders) order column output.
 function ccd_admin_column_value_function_new_method($column, $order)
 {
-
-    global $post;
-
-    $account = '';
-    if (get_post_meta($order->id, '_bkash_number', true)) {
-        $account = sanitize_text_field(get_post_meta($order->id, '_bkash_number', true)) . ' ( Bkash )';
-    } else if (get_post_meta($order->id, '_ccd_nagad_number', true)) {
-        $account = sanitize_text_field(get_post_meta($order->id, '_ccd_nagad_number', true)) . ' ( Nagad )';
-    } else if (get_post_meta($order->id, '_ccd_rocket_number', true)) {
-        $account = sanitize_text_field(get_post_meta($order->id, '_ccd_rocket_number', true)) . ' ( Rocket )';
-    } else if (get_post_meta($order->id, '_ccd_payoneeer_sender_email', true)) {
-        $account = sanitize_text_field(get_post_meta($order->id, '_ccd_payoneeer_sender_email', true)) . ' ( Payoneer )';
+    if (!is_a($order, 'WC_Order')) {
+        $order = wc_get_order($order);
+    }
+    if (!$order) {
+        return;
     }
 
-    $tran_id = '';
-
-    if (get_post_meta($order->id, '_bkash_transaction', true)) {
-        $tran_id = sanitize_text_field(get_post_meta($order->id, '_bkash_transaction', true));
-    } else if (get_post_meta($order->id, '_ccd_nagad_transaction', true)) {
-        $tran_id = sanitize_text_field(get_post_meta($order->id, '_ccd_nagad_transaction', true));
-    } else if (get_post_meta($order->id, '_ccd_rocket_transaction', true)) {
-        $tran_id = sanitize_text_field(get_post_meta($order->id, '_ccd_rocket_transaction', true));
-    } else if (get_post_meta($order->id, '_ccd_payoneer_transaction_id', true)) {
-        $tran_id = sanitize_text_field(get_post_meta($order->id, '_ccd_payoneer_transaction_id', true));
-    }
+    list($account, $tran_id) = ccd_get_order_column_values($order);
 
     switch ($column) {
         case 'account_no':
-            // Get custom order metadata
             echo esc_attr($account);
             break;
 
         case 'tran_id':
-            // Get custom order metadata
             echo esc_attr($tran_id);
             break;
     }
@@ -546,10 +651,10 @@ function ccd_checkout_page_enqueue_script()
     if (is_checkout()) {
 
         // CSS
-        wp_enqueue_style('ccd_checkout_page-css', plugin_dir_url(__FILE__) . 'assets/css/ccd-payment-gateway-checkout.css', array(), time());
+        wp_enqueue_style('ccd_checkout_page-css', plugin_dir_url(__FILE__) . 'assets/css/ccd-payment-gateway-checkout.css', array(), CCD_PAYMENT_GATEWAY_VERSION);
 
         //js
-        wp_enqueue_script('ccd_checkout_page-script', plugins_url('assets/js/ccd_scripts.js', __FILE__), array('jquery'), time(), true);
+        wp_enqueue_script('ccd_checkout_page-script', plugins_url('assets/js/ccd_scripts.js', __FILE__), array('jquery'), CCD_PAYMENT_GATEWAY_VERSION, true);
     }
 }
 
@@ -560,106 +665,30 @@ add_action('woocommerce_checkout_process', 'ccd_bkash_payment_validation');
 
 function ccd_bkash_payment_validation()
 {
+    if (!isset($_POST['payment_method'])) {
+        return;
+    }
 
-    // Checking if payment method is bKash
-    if (isset($_POST['payment_method']) && $_POST['payment_method'] === 'ccd_bkash') {
+    $method = sanitize_text_field(wp_unslash($_POST['payment_method']));
+    $map    = ccd_payment_field_map();
 
-        // Check if bKash number is empty
-        if (empty($_POST['bkash_number'])) {
-            // Debugging message for bKash number validation
-            wc_add_notice(__('Please enter your bKash number.', 'ccd-payment-gateway-domain'), 'error');
-        } else {
-            // Validate bKash number format
-            $bkash_number = $_POST['bkash_number'];
-            if (!preg_match("/^[0-9]{11}$/", $bkash_number)) {
-                wc_add_notice(__('Please enter a valid bKash phone number.', 'ccd-payment-gateway-domain'), 'error');
-            }
-        }
+    if (!isset($map[$method])) {
+        return;
+    }
 
-        // Check if bKash transaction ID is empty
-        if (empty($_POST['bkash_transaction_id'])) {
-            // Debugging message for bKash transaction ID validation
-            wc_add_notice(__('Please enter your bKash transaction ID.', 'ccd-payment-gateway-domain'), 'error');
-        } elseif (strlen($_POST['bkash_transaction_id']) < 5) {
-            // Check if bKash transaction ID has less than 5 digits
-            wc_add_notice(__('Please enter a valid bKash transaction ID.', 'ccd-payment-gateway-domain'), 'error');
+    // Nonce is verified by WooCommerce core before this checkout hook fires.
+    $data = array();
+    foreach (array_keys($map[$method]) as $field) {
+        if (isset($_POST[$field])) {
+            $data[$field] = sanitize_text_field(wp_unslash($_POST[$field])); // phpcs:ignore WordPress.Security.NonceVerification.Missing
         }
     }
 
-    // Checking if payment method is nagad
-    if (isset($_POST['payment_method']) && $_POST['payment_method'] === 'ccd_nagad') {
+    // A previous failed attempt may have left a pending order with this transaction ID.
+    $awaiting = (WC()->session) ? absint(WC()->session->get('order_awaiting_payment')) : 0;
 
-        // Check if Nagad number is empty
-        if (empty($_POST['ccd_nagad_number'])) {
-            // Debugging message for Nagad number validation
-            wc_add_notice(__('Please enter your Nagad number.', 'ccd-payment-gateway-domain'), 'error');
-        } else {
-            // Validate bKash number format
-            $ccd_nagad_number = $_POST['ccd_nagad_number'];
-            if (!preg_match("/^[0-9]{11}$/", $ccd_nagad_number)) {
-                wc_add_notice(__('Please enter a valid Nagad phone number.', 'ccd-payment-gateway-domain'), 'error');
-            }
-        }
-
-        // Check if Nagad transaction ID is empty
-        if (empty($_POST['ccd_nagad_transaction_id'])) {
-            // Debugging message for Nagad transaction ID validation
-            wc_add_notice(__('Please enter your Nagad transaction ID.', 'ccd-payment-gateway-domain'), 'error');
-        } elseif (strlen($_POST['ccd_nagad_transaction_id']) < 5) {
-            // Check if Nagad transaction ID has less than 5 digits
-            wc_add_notice(__('Please enter a valid Nagad transaction ID.', 'ccd-payment-gateway-domain'), 'error');
-        }
-    }
-
-    // Checking if payment method is Rocket
-    if (isset($_POST['payment_method']) && $_POST['payment_method'] === 'ccd_rocket') {
-
-        // Check if Rocket number is empty
-        if (empty($_POST['ccd_rocket_number'])) {
-            // Debugging message for Rocket number validation
-            wc_add_notice(__('Please enter your Rocket number.', 'ccd-payment-gateway-domain'), 'error');
-        } else {
-            // Validate Rocket number format
-            $ccd_nagad_number = $_POST['ccd_rocket_number'];
-            if (!preg_match("/^[0-9]{11}$/", $ccd_nagad_number)) {
-                wc_add_notice(__('Please enter a valid Rocket phone number.', 'ccd-payment-gateway-domain'), 'error');
-            }
-        }
-
-        // Check if Rocket transaction ID is empty
-        if (empty($_POST['ccd_rocket_transaction_id'])) {
-            // Debugging message for Rocket transaction ID validation
-            wc_add_notice(__('Please enter your Rocket transaction ID.', 'ccd-payment-gateway-domain'), 'error');
-        } elseif (strlen($_POST['ccd_rocket_transaction_id']) < 5) {
-            // Check if Rocket transaction ID has less than 5 digits
-            wc_add_notice(__('Please enter a valid Rocket transaction ID.', 'ccd-payment-gateway-domain'), 'error');
-        }
-    }
-
-
-    // Checking if payment method is Payoneer
-    if (isset($_POST['payment_method']) && $_POST['payment_method'] === 'ccd_payoneer') {
-
-        // Check if Payoneer sender email is empty
-        if (empty($_POST['ccd_payoneeer_sender_email'])) {
-            // Debugging message for Payoneer sender email validation
-            wc_add_notice(__('Please enter your Payoneer sender email.', 'ccd-payment-gateway-domain'), 'error');
-        } else {
-            // Validate Payoneer sender email format
-            $ccd_payoneer_sender_email = $_POST['ccd_payoneeer_sender_email'];
-            if (!filter_var($ccd_payoneer_sender_email, FILTER_VALIDATE_EMAIL)) {
-                wc_add_notice(__('Please enter a valid Payoneer sender email.', 'ccd-payment-gateway-domain'), 'error');
-            }
-        }
-
-        // Check if Payoneer transaction ID is empty
-        if (empty($_POST['ccd_payoneer_transaction_id'])) {
-            // Debugging message for Payoneer transaction ID validation
-            wc_add_notice(__('Please enter your Payoneer transaction ID.', 'ccd-payment-gateway-domain'), 'error');
-        } elseif (strlen($_POST['ccd_payoneer_transaction_id']) < 5) {
-            // Check if Payoneer transaction ID has less than 5 characters
-            wc_add_notice(__('Please enter a valid Payoneer transaction ID.', 'ccd-payment-gateway-domain'), 'error');
-        }
+    foreach (ccd_validate_payment_fields($method, $data, $awaiting) as $error) {
+        wc_add_notice($error, 'error');
     }
 }
 
@@ -871,9 +900,91 @@ function ccd_get_advance_payment_amount($order)
     if (!$order) {
         return 0;
     }
-    
+
     $shipping_total = $order->get_shipping_total();
     $shipping_tax = $order->get_shipping_tax();
-    
+
     return floatval($shipping_total) + floatval($shipping_tax);
 }
+
+/**
+ * Build the advance-payment notice strings for the current cart.
+ *
+ * Shared by the classic checkout fields and the block checkout integration so
+ * both surfaces show identical wording. Returns null when advance payment is
+ * not applicable (disabled, no cart, or no shipping charge).
+ *
+ * @return array{title:string,advanceText:string,remainingText:string,advanceAmount:string,remainingAmount:string}|null
+ */
+function ccd_get_advance_payment_display()
+{
+    if (!ccd_is_advance_payment_enabled()) {
+        return null;
+    }
+    if (!function_exists('WC') || !WC()->cart || !WC()->cart->needs_shipping()) {
+        return null;
+    }
+
+    $cart           = WC()->cart;
+    $shipping_total = $cart->get_shipping_total();
+    $shipping_tax   = $cart->get_shipping_tax();
+    $advance_amount = floatval($shipping_total) + floatval($shipping_tax);
+
+    if ($advance_amount <= 0) {
+        return null;
+    }
+
+    $cart_total       = floatval($cart->get_total(''));
+    $remaining_amount = $cart_total - $advance_amount;
+
+    $title = get_option('ccd_advance_payment_title', '');
+    $title = !empty($title) ? $title : __('Advance Payment Information:', 'ccd-payment-gateway-domain');
+    $title = apply_filters('ccd_advance_payment_title', $title);
+
+    $advance_text = get_option('ccd_advance_payment_text', '');
+    $advance_text = !empty($advance_text) ? $advance_text : __('You will pay only the delivery charge as advance payment:', 'ccd-payment-gateway-domain');
+    $advance_text = apply_filters('ccd_advance_payment_text', $advance_text);
+
+    $remaining_text = get_option('ccd_remaining_payment_text', '');
+    $remaining_text = !empty($remaining_text) ? $remaining_text : __('Remaining amount to be paid later:', 'ccd-payment-gateway-domain');
+    $remaining_text = apply_filters('ccd_remaining_payment_text', $remaining_text);
+
+    $advance_formatted   = wp_strip_all_tags(wc_price($advance_amount, array('currency' => get_woocommerce_currency())));
+    $remaining_formatted = wp_strip_all_tags(wc_price($remaining_amount, array('currency' => get_woocommerce_currency())));
+
+    // Support {amount} placeholders.
+    $advance_text   = str_replace('{amount}', $advance_formatted, $advance_text);
+    $remaining_text = str_replace('{amount}', $remaining_formatted, $remaining_text);
+
+    return array(
+        'title'           => wp_strip_all_tags($title),
+        'advanceText'     => wp_strip_all_tags($advance_text),
+        'remainingText'   => wp_strip_all_tags($remaining_text),
+        'advanceAmount'   => $advance_formatted,
+        'remainingAmount' => $remaining_formatted,
+    );
+}
+
+/**
+ * Shakvaro WP Insights — opt-in, privacy-first usage telemetry.
+ * Disabled by default; nothing is sent unless the site admin opts in.
+ * See readme "Privacy & Data Sharing" and https://shakvaro.com/wp-insights/privacy
+ */
+require_once __DIR__ . '/vendor/shakvaro-wp-insights/load.php';
+add_action('shakvaro_wp_insights_loaded', function () {
+    \Shakvaro\WP\Insights\Insights::register(array(
+        'slug'           => 'codecarebd-bkash-nagad-rocket-payoneer-gateway',
+        'name'           => 'CodeCareBD - Payment Gateway',
+        'version'        => defined('CCD_PAYMENT_GATEWAY_VERSION') ? CCD_PAYMENT_GATEWAY_VERSION : '1.2',
+        'plugin_file'    => __FILE__,
+        'api_key'        => 'pk_codecarebd_bkash_nag_y44dKm9du3BifdGZ',
+        'signing_secret' => 'aZp4Z11ignSgGT7XDsfJ0GDvXsfGST4IIHxR4IphgwvnKCBA',
+        'endpoint'       => 'https://track.shakvaro.cloud',
+    ))
+    ->track_feature('gateway_bkash', function () { $s = get_option('woocommerce_ccd_bkash_settings'); return is_array($s) && (isset($s['enabled']) ? $s['enabled'] : '') === 'yes'; })
+    ->track_feature('gateway_nagad', function () { $s = get_option('woocommerce_ccd_nagad_settings'); return is_array($s) && (isset($s['enabled']) ? $s['enabled'] : '') === 'yes'; })
+    ->track_feature('gateway_rocket', function () { $s = get_option('woocommerce_ccd_rocket_settings'); return is_array($s) && (isset($s['enabled']) ? $s['enabled'] : '') === 'yes'; })
+    ->track_feature('gateway_payoneer', function () { $s = get_option('woocommerce_ccd_payoneer_settings'); return is_array($s) && (isset($s['enabled']) ? $s['enabled'] : '') === 'yes'; })
+    ->track_feature('advance_payment', function () { return get_option('ccd_enable_advance_payment', 'no') === 'yes'; })
+    ->add_deactivation_survey();
+});
