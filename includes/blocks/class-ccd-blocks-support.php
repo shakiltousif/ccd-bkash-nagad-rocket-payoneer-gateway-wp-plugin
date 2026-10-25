@@ -89,7 +89,7 @@ class CCD_Blocks_Support extends \Automattic\WooCommerce\Blocks\Payments\Integra
             );
 
             if (function_exists('wp_set_script_translations')) {
-                wp_set_script_translations($handle, 'ccd-payment-gateway-domain');
+                wp_set_script_translations($handle, 'codecarebd-bkash-nagad-rocket-payoneer-gateway', CCD_PAYMENT_GATEWAY_PLUGIN_DIR . 'languages');
             }
         }
 
@@ -131,8 +131,8 @@ class CCD_Blocks_Support extends \Automattic\WooCommerce\Blocks\Payments\Integra
             'chargeNote'     => ccd_get_charge_note($this->name),
             'discountNote'   => ccd_get_discount_note($this->name),
             'anyCharge'      => ccd_any_charge_enabled(),
-            'bankAccounts'   => 'ccd_bank' === $this->name ? ccd_bank_picker_accounts() : array(),
-            'bankI18n'       => 'ccd_bank' === $this->name ? ccd_bank_picker_i18n() : array(),
+            'pickerItems'    => ccd_picker_items($this->name),
+            'pickerI18n'     => ccd_picker_i18n($this->name),
             'proofMode'      => function_exists('ccd_proof_mode') ? ccd_proof_mode($this->name) : 'off',
             'icon'           => CCD_PAYMENT_GATEWAY_PLUGIN_URL . $config['icon'],
             'fields'         => $fields,

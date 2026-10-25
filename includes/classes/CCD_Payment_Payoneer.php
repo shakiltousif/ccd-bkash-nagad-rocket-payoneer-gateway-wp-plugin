@@ -13,8 +13,8 @@ class CCD_Payment_Payoneer extends WC_Payment_Gateway
         $this->id                     = 'ccd_payoneer';
         $this->title                 = $this->get_option('ccd_payoneer_title', 'Payment With Payoneer');
         $this->description             = $this->get_option('ccd_payoneer_description', 'Please fill up this form to confirm the payment');
-        $this->method_title         = esc_html("Payoneer Gateway", "ccd-payment-gateway-domain");
-        $this->method_description     = esc_html("Take Payments By Payoneer. So that we can easily accept payments by Confirming Transaction ID and Customer Billing Number.", "ccd-payment-gateway-domain");
+        $this->method_title         = esc_html__("Payoneer Gateway", "codecarebd-bkash-nagad-rocket-payoneer-gateway");
+        $this->method_description     = esc_html__("Take Payments By Payoneer. So that we can easily accept payments by Confirming Transaction ID and Customer Billing Number.", "codecarebd-bkash-nagad-rocket-payoneer-gateway");
         $this->ccd_payoneer_recipient_email = $this->get_option('ccd_payoneer_recipient_email');
         $this->ccd_payoneer_account_type     = $this->get_option('ccd_payoneer_account_type');
         $this->ccd_payoneer_order_status = $this->get_option('ccd_payoneer_order_status');
@@ -34,39 +34,39 @@ class CCD_Payment_Payoneer extends WC_Payment_Gateway
     {
         $this->form_fields = array(
             'enabled'     =>    array(
-                'title'        => esc_html('Enable/Disable', "ccd-payment-gateway-domain"),
+                'title'        => esc_html__('Enable/Disable', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'         => 'checkbox',
                 'default'    => 'yes'
             ),
             'ccd_payoneer_title'     => array(
-                'title'     => esc_html('Title', "ccd-payment-gateway-domain"),
+                'title'     => esc_html__('Title', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'         => 'text',
-                'default'    => esc_html('Payment With Payoneer', "ccd-payment-gateway-domain")
+                'default'    => esc_html__('Payment With Payoneer', "codecarebd-bkash-nagad-rocket-payoneer-gateway")
             ),
             'ccd_payoneer_description' => array(
-                'title'        => esc_html('Description', "ccd-payment-gateway-domain"),
+                'title'        => esc_html__('Description', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'         => 'textarea',
-                'default'    => esc_html('Please fill up this form to confirm the payment', "ccd-payment-gateway-domain"),
+                'default'    => esc_html__('Please fill up this form to confirm the payment', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'desc_tip'    => true
             ),
             'ccd_payoneer_instructions' => array(
-                'title'           => esc_html('Thank you page message', "ccd-payment-gateway-domain"),
+                'title'           => esc_html__('Thank you page message', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'            => 'textarea',
-                'description'     => esc_html('Thank you page message that will be added to the thank you page and emails.', "ccd-payment-gateway-domain"),
-                'default'         => esc_html('Thanks for purchasing through Payoneer. We will check and give you update as soon as possible.', "ccd-payment-gateway-domain"),
+                'description'     => esc_html__('Thank you page message that will be added to the thank you page and emails.', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
+                'default'         => esc_html__('Thanks for purchasing through Payoneer. We will check and give you update as soon as possible.', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'desc_tip'        => true
             ),
             'ccd_payoneer_recipient_email'    => array(
-                'title'            => esc_html('Payoneer Recipient Email', "ccd-payment-gateway-domain"),
-                'description'     => esc_html('Add a Payoneer email which will be shown in checkout page', "ccd-payment-gateway-domain"),
+                'title'            => esc_html__('Payoneer Recipient Email', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
+                'description'     => esc_html__('Add a Payoneer email which will be shown in checkout page', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'            => 'text',
                 'desc_tip'      => true
             ),
             'ccd_payoneer_order_status' => array(
-                'title'       => esc_html('Order Status', "ccd-payment-gateway-domain"),
+                'title'       => esc_html__('Order Status', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'        => 'select',
                 'class'       => 'wc-enhanced-select',
-                'description' => esc_html('Choose whether status you wish after checkout.', "ccd-payment-gateway-domain"),
+                'description' => esc_html__('Choose whether status you wish after checkout.', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'default'     => 'wc-on-hold',
                 'desc_tip'    => true,
                 'options'     => wc_get_order_statuses()
@@ -81,7 +81,7 @@ class CCD_Payment_Payoneer extends WC_Payment_Gateway
         ccd_render_advance_notice();
 
         // $bkash_charge = ($this->bkash_charge == 'yes') ? esc_html__(' Also note that 1.85% bKash "SEND MONEY" cost will be added with net price. Total amount you need to send us at', "stb") . ' ' . get_woocommerce_currency_symbol() . $woocommerce->cart->total : '';
-        // echo wpautop(wptexturize(esc_html__($this->description, "ccd-payment-gateway-domain")) . $bkash_charge);
+        // echo wpautop(wptexturize(esc_html($this->description)) . $bkash_charge);
         ccd_render_account_box($this->id);
 
 ?>
@@ -89,11 +89,11 @@ class CCD_Payment_Payoneer extends WC_Payment_Gateway
         <div class="payment_box_ccd_child">
             <table>
                 <tr>
-                    <td><label for="ccd_payoneeer_sender_email"><?php esc_html_e('Payoneer Email', "ccd-payment-gateway-domain"); ?></label></td>
+                    <td><label for="ccd_payoneeer_sender_email"><?php esc_html_e('Payoneer Email', "codecarebd-bkash-nagad-rocket-payoneer-gateway"); ?></label></td>
                     <td><input class="widefat" type="email" name="ccd_payoneeer_sender_email" id="ccd_payoneeer_sender_email" placeholder="Ex. example@example.com"></td>
                 </tr>
                 <tr>
-                    <td><label for="ccd_payoneer_transaction_id"><?php esc_html_e('Transaction ID', "ccd-payment-gateway-domain"); ?></label></td>
+                    <td><label for="ccd_payoneer_transaction_id"><?php esc_html_e('Transaction ID', "codecarebd-bkash-nagad-rocket-payoneer-gateway"); ?></label></td>
                     <td><input class="widefat" type="text" name="ccd_payoneer_transaction_id" id="ccd_payoneer_transaction_id" placeholder="Ex. 8N7A6D5EE7M"></td>
                 </tr>
             </table>

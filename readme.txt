@@ -3,7 +3,7 @@ Contributors: devshakil, codecarebd, shakvaro
 Requires at least: 6.3
 Requires PHP: 7.3
 Tested up to: 7.1
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 WC requires at least: 6.3
 WC tested up to: 11.2
 License: GPLv2 or later
@@ -30,8 +30,8 @@ The customer pays you from their own app (send money, cash out, Bangla QR scan o
 
 = Payment methods =
 
-* **bKash, Nagad, Rocket, Upay** - show your number (Personal, Agent or Merchant) with a one-click Copy button and your QR code.
-* **CellFin (Islami Bank)** - show your Islami Bank account or CellFin number.
+* **bKash, Nagad, Rocket, Upay** - show your number (Personal, Agent or Merchant) with a one-click Copy button and your QR code. Add **as many numbers as you need**: customers search and pick the number they sent money to.
+* **CellFin (Islami Bank)** - show your Islami Bank account or CellFin number (one or several).
 * **Bangla QR** - show your Bangla QR code; customers pay from any bank or mobile banking app.
 * **Bank transfer (BEFTN / NPSB / RTGS)** - add as many bank accounts as you need. With several accounts, customers search and pick the account they paid into, and see that account's number and routing number with Copy buttons.
 * **Payoneer** - customers pay to your Payoneer email.
@@ -39,7 +39,7 @@ The customer pays you from their own app (send money, cash out, Bangla QR scan o
 = Key features =
 
 * **Duplicate Transaction ID protection** for every method (classic and block checkout).
-* **Payment screenshot / PDF upload** - off, optional or required per method. Files are stored privately on your server; only shop managers can view them.
+* **Payment screenshot / PDF upload** - off, optional or required per method, at checkout or later from the thank-you page and My Account. Files are stored privately on your server; only shop managers can view them.
 * **Send money charge** per method - percentage (e.g. bKash 1.85%) or fixed amount, updated live as the customer switches method.
 * **Prepayment discount** per method - percentage or fixed, to encourage prepaid orders over cash on delivery.
 * **Minimum / maximum order amount** per method, e.g. to respect your wallet's send money limit.
@@ -48,7 +48,11 @@ The customer pays you from their own app (send money, cash out, Bangla QR scan o
 * **Settings checks** - wrong receiving numbers, routing numbers, QR links, percentages or limits are caught when you save, so customers never see a broken payment method.
 * Number, Transaction ID and payment details on the **admin order screen**, the orders list and the customer's **My Account > Orders**.
 * Custom **thank-you page message** and order email instructions per method.
-* Translation ready.
+* **Bangla translation included** (বাংলা) for the checkout, emails and settings. Translation ready for other languages.
+
+= বাংলায় =
+
+বিকাশ (bKash), নগদ (Nagad), রকেট (Rocket), উপায় (Upay), সেলফিন (CellFin), বাংলা কিউআর (Bangla QR) ও ব্যাংক ট্রান্সফারে ম্যানুয়াল পেমেন্ট নিন। কাস্টমার টাকা পাঠিয়ে চেকআউটে নম্বর ও ট্রানজেকশন আইডি দেন, চাইলে পেমেন্টের স্ক্রিনশটও। একাধিক বিকাশ/নগদ নম্বর বা ব্যাংক অ্যাকাউন্ট, ঢাকার ভেতরে/বাইরে অগ্রিম ডেলিভারি চার্জ, ডুপ্লিকেট ট্রানজেকশন আইডি প্রতিরোধ এবং পূর্ণ বাংলা অনুবাদ রয়েছে।
 
 = Perfect for =
 
@@ -119,6 +123,18 @@ Go to WooCommerce > Settings > Payments, open the method and use the "Select ima
 
 Bangladesh Bank's national interoperable QR code. One QR code can be paid from any participating bank or mobile financial service app. Enable "Bangla QR", add your merchant name and upload your Bangla QR image. The method stays hidden at checkout until a QR image is added.
 
+= Can I add more than one bKash, Nagad, Rocket or Upay number? =
+
+Yes. Open the method under WooCommerce > Settings > Payments and use "+ Add number" under More Numbers (each with an account type and an optional label like "Shop 2"). With more than one number, customers search and choose the number they sent money to, and the order shows it under "Paid To".
+
+= Can customers upload the payment screenshot after placing the order? =
+
+Yes, when Payment Screenshot is set to Optional or Required for that method. The thank-you page and My Account > Orders > View show an upload box while the order is pending, on hold or "Advance Received" (up to 5 uploads per order). A new upload replaces the previous file and adds an order note.
+
+= Is the plugin available in Bangla? =
+
+Yes. A full Bangla (bn_BD) translation is included. Set Settings > General > Site Language to বাংলা and the checkout, emails and settings appear in Bangla.
+
 = Can I add more than one bank account? =
 
 Yes, as many as you need. Under Bank Transfer, use "+ Add account". With more than one account, customers get a searchable list (5 at a time, with "Show more") and choose the account they paid into; the order shows which account it was.
@@ -169,8 +185,18 @@ Data is sent over HTTPS to https://track.shakvaro.cloud and is handled as descri
 6. Bank Transfer settings: add as many bank accounts as you need.
 7. Advance payment: fixed amount for inside / outside Dhaka with a minimum order total.
 8. Admin order screen: payment number, Transaction ID and the customer's payment screenshot.
+9. Several bKash numbers: customers search and choose the number they sent money to.
+10. Upload the payment screenshot after ordering, from the thank-you page or My Account.
 
 == Changelog ==
+
+= 1.6.0 - 2026-11-15 =
+* NEW: Multiple receiving numbers for bKash, Nagad, Rocket, Upay and CellFin. With several numbers, customers search and pick the number they sent money to (5 at a time, "Show more"); the order shows it under "Paid To".
+* NEW: Customers can upload or replace the payment screenshot after ordering, from the thank-you page or My Account > View order (up to 5 uploads per order, secured by the order key).
+* NEW: Bangla (bn_BD) translation for the checkout, emails and settings, including the block checkout.
+* IMPROVED: Text domain is now the plugin slug, so translations from translate.wordpress.org load automatically.
+* IMPROVED: Settings labels of bKash, Nagad, Rocket and Payoneer are now translatable.
+* IMPROVED: The account picker for several bank accounts is shared with the new wallet number picker.
 
 = 1.5.0 - 2026-11-01 =
 * NEW: Upay, CellFin (Islami Bank), Bangla QR and Bank Transfer (BEFTN / NPSB / RTGS) payment methods.
@@ -266,6 +292,9 @@ Data is sent over HTTPS to https://track.shakvaro.cloud and is handled as descri
 * First release.
 
 == Upgrade Notice ==
+
+= 1.6.0 =
+Adds multiple numbers per wallet, payment screenshot upload after ordering and a full Bangla translation. Existing settings are kept.
 
 = 1.5.0 =
 Adds Upay, CellFin, Bangla QR and multi-account bank transfer, payment screenshot upload, discounts, order limits and Dhaka zone advance payments. Fixes Rocket 12-digit account numbers and thank you messages. Existing settings are kept.

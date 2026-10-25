@@ -63,29 +63,29 @@ abstract class CCD_Gateway_Base extends WC_Payment_Gateway
         $label = $this->ccd['label'];
         $fields = array(
             'enabled' => array(
-                'title'   => __('Enable/Disable', 'ccd-payment-gateway-domain'),
+                'title'   => __('Enable/Disable', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'type'    => 'checkbox',
                 /* translators: %s: payment method label */
-                'label'   => sprintf(__('Enable %s', 'ccd-payment-gateway-domain'), $label),
+                'label'   => sprintf(__('Enable %s', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), $label),
                 'default' => 'no',
             ),
             $this->id . '_title' => array(
-                'title'   => __('Title', 'ccd-payment-gateway-domain'),
+                'title'   => __('Title', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'type'    => 'text',
                 'default' => $this->ccd['title_default'],
             ),
             $this->id . '_description' => array(
-                'title'    => __('Description', 'ccd-payment-gateway-domain'),
+                'title'    => __('Description', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'type'     => 'textarea',
-                'default'  => __('Please complete the payment, then fill up this form to confirm it.', 'ccd-payment-gateway-domain'),
+                'default'  => __('Please complete the payment, then fill up this form to confirm it.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'desc_tip' => true,
             ),
             $this->id . '_instructions' => array(
-                'title'       => __('Thank you page message', 'ccd-payment-gateway-domain'),
+                'title'       => __('Thank you page message', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'type'        => 'textarea',
-                'description' => __('Shown on the thank you page and in the customer order emails.', 'ccd-payment-gateway-domain'),
+                'description' => __('Shown on the thank you page and in the customer order emails.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 /* translators: %s: payment method label */
-                'default'     => sprintf(__('Thanks for paying with %s. We will verify your payment and update your order as soon as possible.', 'ccd-payment-gateway-domain'), $label),
+                'default'     => sprintf(__('Thanks for paying with %s. We will verify your payment and update your order as soon as possible.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), $label),
                 'desc_tip'    => true,
             ),
         );
@@ -95,17 +95,17 @@ abstract class CCD_Gateway_Base extends WC_Payment_Gateway
         if (!empty($this->ccd['charge_key'])) {
             $fields[$this->ccd['charge_key']] = array(
                 /* translators: %s: payment method label */
-                'title'   => sprintf(__('Enable %s Charge', 'ccd-payment-gateway-domain'), $label),
+                'title'   => sprintf(__('Enable %s Charge', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), $label),
                 'type'    => 'checkbox',
                 'default' => 'no',
             );
         }
 
         $fields[$this->id . '_order_status'] = array(
-            'title'       => __('Order Status', 'ccd-payment-gateway-domain'),
+            'title'       => __('Order Status', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
             'type'        => 'select',
             'class'       => 'wc-enhanced-select',
-            'description' => __('Order status after checkout, while you verify the payment.', 'ccd-payment-gateway-domain'),
+            'description' => __('Order status after checkout, while you verify the payment.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
             'default'     => 'wc-on-hold',
             'desc_tip'    => true,
             'options'     => wc_get_order_statuses(),
@@ -121,6 +121,9 @@ abstract class CCD_Gateway_Base extends WC_Payment_Gateway
      */
     public function ccd_is_configured()
     {
+        if (ccd_supports_more_accounts($this->id)) {
+            return !empty(ccd_receiving_accounts($this->id));
+        }
         return '' !== trim((string) $this->get_option($this->ccd['number_key']));
     }
 
@@ -165,7 +168,7 @@ abstract class CCD_Gateway_Base extends WC_Payment_Gateway
                 esc_html($field['label']),
                 esc_attr('tel' === $field['type'] ? 'text' : $field['type']),
                 esc_attr($field['placeholder']),
-                esc_attr__('required', 'ccd-payment-gateway-domain'),
+                esc_attr__('required', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 $mode // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed string.
             );
         }
@@ -243,27 +246,27 @@ class CCD_Payment_Upay extends CCD_Gateway_Base
 
     protected function ccd_method_description()
     {
-        return __('Accept manual Upay (United Commercial Bank) payments. The customer sends money to your Upay number and submits their number and Transaction ID.', 'ccd-payment-gateway-domain');
+        return __('Accept manual Upay (United Commercial Bank) payments. The customer sends money to your Upay number and submits their number and Transaction ID.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
     }
 
     protected function ccd_account_fields()
     {
         return array(
             'ccd_upay_number' => array(
-                'title'       => __('Upay Number', 'ccd-payment-gateway-domain'),
+                'title'       => __('Upay Number', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'type'        => 'text',
-                'description' => __('Your 11-digit Upay mobile number shown to customers, e.g. 017XXXXXXXX.', 'ccd-payment-gateway-domain'),
+                'description' => __('Your 11-digit Upay mobile number shown to customers, e.g. 017XXXXXXXX.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'desc_tip'    => true,
                 'placeholder' => '017XXXXXXXX',
             ),
             'ccd_upay_account_type' => array(
-                'title'   => __('Upay Account Type', 'ccd-payment-gateway-domain'),
+                'title'   => __('Upay Account Type', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'type'    => 'select',
                 'class'   => 'wc-enhanced-select',
                 'options' => array(
-                    'Personal' => __('Personal', 'ccd-payment-gateway-domain'),
-                    'Agent'    => __('Agent', 'ccd-payment-gateway-domain'),
-                    'Merchant' => __('Merchant', 'ccd-payment-gateway-domain'),
+                    'Personal' => __('Personal', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
+                    'Agent'    => __('Agent', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
+                    'Merchant' => __('Merchant', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 ),
                 'default' => 'Personal',
             ),
@@ -284,25 +287,25 @@ class CCD_Payment_Cellfin extends CCD_Gateway_Base
 
     protected function ccd_method_description()
     {
-        return __('Accept manual payments from the CellFin app (Islami Bank Bangladesh). The customer sends money to your account or CellFin number and submits the transaction reference.', 'ccd-payment-gateway-domain');
+        return __('Accept manual payments from the CellFin app (Islami Bank Bangladesh). The customer sends money to your account or CellFin number and submits the transaction reference.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
     }
 
     protected function ccd_account_fields()
     {
         return array(
             'ccd_cellfin_number' => array(
-                'title'       => __('Receiving Account or Mobile Number', 'ccd-payment-gateway-domain'),
+                'title'       => __('Receiving Account or Mobile Number', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'type'        => 'text',
-                'description' => __('Your Islami Bank account number or CellFin mobile number shown to customers.', 'ccd-payment-gateway-domain'),
+                'description' => __('Your Islami Bank account number or CellFin mobile number shown to customers.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'desc_tip'    => true,
             ),
             'ccd_cellfin_account_type' => array(
-                'title'   => __('Receiving Number Type', 'ccd-payment-gateway-domain'),
+                'title'   => __('Receiving Number Type', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'type'    => 'select',
                 'class'   => 'wc-enhanced-select',
                 'options' => array(
-                    'Account' => __('Bank account number', 'ccd-payment-gateway-domain'),
-                    'Mobile'  => __('CellFin mobile number', 'ccd-payment-gateway-domain'),
+                    'Account' => __('Bank account number', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
+                    'Mobile'  => __('CellFin mobile number', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 ),
                 'default' => 'Account',
             ),
@@ -323,17 +326,17 @@ class CCD_Payment_Bank extends CCD_Gateway_Base
 
     protected function ccd_method_description()
     {
-        return __('Accept manual bank transfers (BEFTN, NPSB or RTGS) to your bank account. The customer transfers the amount and submits the transfer reference.', 'ccd-payment-gateway-domain');
+        return __('Accept manual bank transfers (BEFTN, NPSB or RTGS) to your bank account. The customer transfers the amount and submits the transfer reference.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
     }
 
     protected function ccd_account_fields()
     {
         return array(
             'ccd_bank_accounts' => array(
-                'title'       => __('Bank Accounts', 'ccd-payment-gateway-domain'),
+                'title'       => __('Bank Accounts', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'type'        => 'ccd_bank_accounts',
                 'default'     => array(),
-                'description' => __('Add one or more accounts. Account number is required; the routing number (9 digits) is needed for BEFTN/NPSB transfers from other banks. With more than one account, customers choose the account they paid into.', 'ccd-payment-gateway-domain'),
+                'description' => __('Add one or more accounts. Account number is required; the routing number (9 digits) is needed for BEFTN/NPSB transfers from other banks. With more than one account, customers choose the account they paid into.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
             ),
         );
     }
@@ -360,11 +363,11 @@ class CCD_Payment_Bank extends CCD_Gateway_Base
         $accounts = $this->get_option($key, array());
         $accounts = is_array($accounts) && $accounts ? $accounts : array(array());
         $columns  = array(
-            'bank_name'      => array(__('Bank Name', 'ccd-payment-gateway-domain'), 'Dutch-Bangla Bank PLC'),
-            'account_name'   => array(__('Account Name', 'ccd-payment-gateway-domain'), ''),
-            'account_number' => array(__('Account Number', 'ccd-payment-gateway-domain') . ' *', ''),
-            'branch'         => array(__('Branch', 'ccd-payment-gateway-domain'), ''),
-            'routing'        => array(__('Routing Number', 'ccd-payment-gateway-domain'), '090261234'),
+            'bank_name'      => array(__('Bank Name', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 'Dutch-Bangla Bank PLC'),
+            'account_name'   => array(__('Account Name', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), ''),
+            'account_number' => array(__('Account Number', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') . ' *', ''),
+            'branch'         => array(__('Branch', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), ''),
+            'routing'        => array(__('Routing Number', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), '090261234'),
         );
         $placeholders = array();
         foreach ($columns as $name => $column) {
@@ -399,8 +402,8 @@ class CCD_Payment_Bank extends CCD_Gateway_Base
                         <tfoot>
                             <tr>
                                 <th colspan="6">
-                                    <a href="#" class="add button"><?php esc_html_e('+ Add account', 'ccd-payment-gateway-domain'); ?></a>
-                                    <a href="#" class="remove_rows button"><?php esc_html_e('Remove selected account(s)', 'ccd-payment-gateway-domain'); ?></a>
+                                    <a href="#" class="add button"><?php esc_html_e('+ Add account', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></a>
+                                    <a href="#" class="remove_rows button"><?php esc_html_e('Remove selected account(s)', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></a>
                                 </th>
                             </tr>
                         </tfoot>
@@ -458,37 +461,6 @@ class CCD_Payment_Bank extends CCD_Gateway_Base
         return $accounts;
     }
 
-    /**
-     * Receiving details plus, with several accounts, "which account did you pay into".
-     */
-    protected function ccd_render_receiving_details()
-    {
-        parent::ccd_render_receiving_details();
-
-        $accounts = ccd_bank_picker_accounts();
-        if (!$accounts) {
-            return;
-        }
-        $i18n = ccd_bank_picker_i18n();
-
-        // Searchable, paginated picker; ccd_scripts.js filters, pages and fills the hidden field.
-        echo '<div class="ccd-bank-picker" data-page-size="5" data-i18n="' . esc_attr(wp_json_encode($i18n)) . '">';
-        echo '<p class="ccd-bank-picker-title"><strong>' . esc_html($i18n['choose']) . '</strong> <abbr class="required" title="' . esc_attr__('required', 'ccd-payment-gateway-domain') . '">*</abbr></p>';
-        echo '<input type="search" class="ccd-bank-search input-text" autocomplete="off" placeholder="' . esc_attr($i18n['search']) . '" aria-label="' . esc_attr($i18n['search']) . '">';
-        echo '<div class="ccd-bank-list" role="listbox" aria-label="' . esc_attr($i18n['choose']) . '">';
-        foreach ($accounts as $account) {
-            echo '<button type="button" class="ccd-bank-option" role="option" aria-selected="false" data-index="' . esc_attr($account['index']) . '" data-search="' . esc_attr($account['search']) . '" data-account="' . esc_attr(wp_json_encode($account)) . '">';
-            echo '<span class="ccd-bank-option-name">' . esc_html($account['bank_name'] ? $account['bank_name'] : $account['label']) . '</span>';
-            echo '<span class="ccd-bank-option-meta">' . esc_html(trim($account['branch'] . ' · A/C ' . $account['account_number'], ' ·')) . '</span>';
-            echo '</button>';
-        }
-        echo '</div>';
-        echo '<p class="ccd-bank-empty" hidden>' . esc_html($i18n['none']) . '</p>';
-        echo '<p class="ccd-bank-footer"><small class="ccd-bank-count"></small> <button type="button" class="ccd-bank-more button">' . esc_html($i18n['more']) . '</button></p>';
-        echo '<div class="ccd-bank-selected" hidden></div>';
-        echo '<input type="hidden" name="ccd_bank_paid_to" class="ccd-bank-paid-to" value="">';
-        echo '</div>';
-    }
 }
 
 /**
@@ -504,16 +476,16 @@ class CCD_Payment_BanglaQR extends CCD_Gateway_Base
 
     protected function ccd_method_description()
     {
-        return __('Show your Bangla QR code at checkout. Customers can scan and pay from any bank or mobile banking app (bKash, Nagad, Rocket, Upay, bank apps), then submit the transaction ID.', 'ccd-payment-gateway-domain');
+        return __('Show your Bangla QR code at checkout. Customers can scan and pay from any bank or mobile banking app (bKash, Nagad, Rocket, Upay, bank apps), then submit the transaction ID.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
     }
 
     protected function ccd_account_fields()
     {
         return array(
             'ccd_banglaqr_merchant_name' => array(
-                'title'       => __('Merchant Name', 'ccd-payment-gateway-domain'),
+                'title'       => __('Merchant Name', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'type'        => 'text',
-                'description' => __('The merchant name customers see in their app after scanning, so they can confirm they are paying you.', 'ccd-payment-gateway-domain'),
+                'description' => __('The merchant name customers see in their app after scanning, so they can confirm they are paying you.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                 'desc_tip'    => true,
             ),
         );

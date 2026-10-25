@@ -34,7 +34,7 @@ function ccd_proof_max_bytes()
 function ccd_proof_too_big_message()
 {
     /* translators: %s: maximum file size, e.g. 2 MB */
-    return sprintf(__('File is too large. Maximum size is %s.', 'ccd-payment-gateway-domain'), size_format(ccd_proof_max_bytes()));
+    return sprintf(__('File is too large. Maximum size is %s.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), size_format(ccd_proof_max_bytes()));
 }
 
 /** Maximum uploads per customer session. */
@@ -124,14 +124,73 @@ function ccd_proof_script_data()
         'maxBytes'  => ccd_proof_max_bytes(),
         'accept'    => 'image/jpeg,image/png,image/webp,application/pdf',
         'i18n'      => array(
-            'uploading' => __('Uploading...', 'ccd-payment-gateway-domain'),
-            'uploaded'  => __('Uploaded:', 'ccd-payment-gateway-domain'),
+            'uploading' => __('Uploading...', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
+            'uploaded'  => __('Uploaded:', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
             'tooBig'    => ccd_proof_too_big_message(),
             /* translators: %s: maximum file size */
-            'hint'      => sprintf(__('JPG, PNG, WebP or PDF, max %s.', 'ccd-payment-gateway-domain'), size_format(ccd_proof_max_bytes())),
-            'failed'    => __('Upload failed. Please try again.', 'ccd-payment-gateway-domain'),
+            'hint'      => sprintf(__('JPG, PNG, WebP or PDF, max %s.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), size_format(ccd_proof_max_bytes())),
+            'failed'    => __('Upload failed. Please try again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
         ),
     );
+}
+
+/**
+ * Validate an uploaded file and move it into the private folder.
+ *
+ * @param string $field  $_FILES key.
+ * @param string $subdir 'tmp/' (checkout, attached later) or 'orders/'.
+ * @param string $prefix File name prefix (e.g. order id).
+ * @return array{file:string,name:string,type:string}|WP_Error Error data is the HTTP status.
+ */
+function ccd_proof_store_upload($field, $subdir, $prefix = '')
+{
+    if (empty($_FILES[$field]) || !isset($_FILES[$field]['tmp_name'], $_FILES[$field]['name'], $_FILES[$field]['error'], $_FILES[$field]['size'])) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.NonceVerification.Missing -- callers verify the nonce.
+        return new WP_Error('ccd_proof', __('No file received.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
+    }
+
+    $file = $_FILES[$field]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- validated below; callers verify the nonce.
+    if (in_array((int) $file['error'], array(UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE), true)) {
+        return new WP_Error('ccd_proof', ccd_proof_too_big_message(), 400);
+    }
+    if (UPLOAD_ERR_NO_FILE === (int) $file['error']) {
+        return new WP_Error('ccd_proof', __('Please choose a file to upload.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
+    }
+    if (UPLOAD_ERR_OK !== (int) $file['error'] || !is_uploaded_file($file['tmp_name'])) {
+        return new WP_Error('ccd_proof', __('Upload failed. Please try again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
+    }
+    if ((int) $file['size'] <= 0 || (int) $file['size'] > ccd_proof_max_bytes()) {
+        return new WP_Error('ccd_proof', ccd_proof_too_big_message(), 400);
+    }
+
+    $name  = sanitize_file_name(wp_unslash($file['name']));
+    $check = wp_check_filetype_and_ext($file['tmp_name'], $name, ccd_proof_mimes());
+    if (empty($check['ext']) || empty($check['type'])) {
+        return new WP_Error('ccd_proof', __('Please upload a JPG, PNG, WebP or PDF file.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
+    }
+
+    // Content check: real image, or a real PDF.
+    if ('application/pdf' === $check['type']) {
+        $head = (string) file_get_contents($file['tmp_name'], false, null, 0, 5); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+        if ('%PDF-' !== $head) {
+            return new WP_Error('ccd_proof', __('This PDF file appears to be damaged.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
+        }
+    } elseif (false === @getimagesize($file['tmp_name'])) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+        return new WP_Error('ccd_proof', __('This image file appears to be damaged.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 400);
+    }
+
+    $dir = ccd_proof_dir();
+    if (!$dir) {
+        return new WP_Error('ccd_proof', __('Upload failed. Please try again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 500);
+    }
+
+    $ext      = 'jpeg' === $check['ext'] ? 'jpg' : $check['ext'];
+    $relative = $subdir . $prefix . bin2hex(random_bytes(16)) . '.' . $ext;
+    if (!@move_uploaded_file($file['tmp_name'], $dir . $relative)) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+        return new WP_Error('ccd_proof', __('Upload failed. Please try again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), 500);
+    }
+    @chmod($dir . $relative, 0640); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+    return array('file' => $relative, 'name' => $name, 'type' => $check['type']);
 }
 
 add_action('wc_ajax_ccd_upload_proof', 'ccd_ajax_upload_proof');
@@ -141,67 +200,33 @@ add_action('wc_ajax_ccd_upload_proof', 'ccd_ajax_upload_proof');
 function ccd_ajax_upload_proof()
 {
     if (!check_ajax_referer('ccd-proof', 'nonce', false)) {
-        wp_send_json_error(array('message' => __('Your session has expired. Please reload the page and try again.', 'ccd-payment-gateway-domain')), 403);
+        wp_send_json_error(array('message' => __('Your session has expired. Please reload the page and try again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')), 403);
     }
 
     $gateway_id = isset($_POST['gateway']) ? sanitize_key(wp_unslash($_POST['gateway'])) : '';
     $config     = ccd_gateway_config();
     if (!isset($config[$gateway_id]) || 'off' === ccd_proof_mode($gateway_id)) {
-        wp_send_json_error(array('message' => __('File upload is not enabled for this payment method.', 'ccd-payment-gateway-domain')), 400);
+        wp_send_json_error(array('message' => __('File upload is not enabled for this payment method.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')), 400);
     }
 
     if (!WC()->session || !WC()->cart || WC()->cart->is_empty()) {
-        wp_send_json_error(array('message' => __('Your cart is empty.', 'ccd-payment-gateway-domain')), 400);
+        wp_send_json_error(array('message' => __('Your cart is empty.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')), 400);
     }
 
     $files = ccd_proof_session_files();
     $count = (int) WC()->session->get('ccd_proof_upload_count');
     if ($count >= CCD_PROOF_MAX_UPLOADS) {
-        wp_send_json_error(array('message' => __('Too many uploads. Please contact us if you need help.', 'ccd-payment-gateway-domain')), 429);
+        wp_send_json_error(array('message' => __('Too many uploads. Please contact us if you need help.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')), 429);
     }
 
-    if (empty($_FILES['file']) || !isset($_FILES['file']['tmp_name'], $_FILES['file']['name'], $_FILES['file']['error'], $_FILES['file']['size'])) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
-        wp_send_json_error(array('message' => __('No file received.', 'ccd-payment-gateway-domain')), 400);
+    $stored = ccd_proof_store_upload('file', 'tmp/');
+    if (is_wp_error($stored)) {
+        wp_send_json_error(array('message' => $stored->get_error_message()), (int) $stored->get_error_data());
     }
-
-    $file = $_FILES['file']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated below.
-    if (in_array((int) $file['error'], array(UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE), true)) {
-        wp_send_json_error(array('message' => ccd_proof_too_big_message()), 400);
-    }
-    if (UPLOAD_ERR_OK !== (int) $file['error'] || !is_uploaded_file($file['tmp_name'])) {
-        wp_send_json_error(array('message' => __('Upload failed. Please try again.', 'ccd-payment-gateway-domain')), 400);
-    }
-    if ((int) $file['size'] <= 0 || (int) $file['size'] > ccd_proof_max_bytes()) {
-        wp_send_json_error(array('message' => ccd_proof_too_big_message()), 400);
-    }
-
-    $name  = sanitize_file_name(wp_unslash($file['name']));
-    $check = wp_check_filetype_and_ext($file['tmp_name'], $name, ccd_proof_mimes());
-    if (empty($check['ext']) || empty($check['type'])) {
-        wp_send_json_error(array('message' => __('Please upload a JPG, PNG, WebP or PDF file.', 'ccd-payment-gateway-domain')), 400);
-    }
-
-    // Content check: real image, or a real PDF.
-    if ('application/pdf' === $check['type']) {
-        $head = (string) file_get_contents($file['tmp_name'], false, null, 0, 5); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-        if ('%PDF-' !== $head) {
-            wp_send_json_error(array('message' => __('This PDF file appears to be damaged.', 'ccd-payment-gateway-domain')), 400);
-        }
-    } elseif (false === @getimagesize($file['tmp_name'])) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-        wp_send_json_error(array('message' => __('This image file appears to be damaged.', 'ccd-payment-gateway-domain')), 400);
-    }
-
-    $dir = ccd_proof_dir();
-    if (!$dir) {
-        wp_send_json_error(array('message' => __('Upload failed. Please try again.', 'ccd-payment-gateway-domain')), 500);
-    }
-
-    $ext      = 'jpeg' === $check['ext'] ? 'jpg' : $check['ext'];
-    $relative = 'tmp/' . bin2hex(random_bytes(16)) . '.' . $ext;
-    if (!@move_uploaded_file($file['tmp_name'], $dir . $relative)) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-        wp_send_json_error(array('message' => __('Upload failed. Please try again.', 'ccd-payment-gateway-domain')), 500);
-    }
-    @chmod($dir . $relative, 0640); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+    $dir      = ccd_proof_dir();
+    $relative = $stored['file'];
+    $name     = $stored['name'];
+    $check    = array('type' => $stored['type']);
 
     // Replace this gateway's previous upload in the session.
     foreach ($files as $old_token => $info) {
@@ -242,13 +267,13 @@ function ccd_payment_proof_errors($gateway_id, $token)
     $token = sanitize_key((string) $token);
     if ('' === $token) {
         return 'required' === $mode
-            ? array(__('Please upload a screenshot or PDF of your payment.', 'ccd-payment-gateway-domain'))
+            ? array(__('Please upload a screenshot or PDF of your payment.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'))
             : array();
     }
 
     $files = ccd_proof_session_files();
     if (!isset($files[$token]) || $files[$token]['gateway'] !== $gateway_id) {
-        return array(__('Your payment screenshot upload has expired. Please upload it again.', 'ccd-payment-gateway-domain'));
+        return array(__('Your payment screenshot upload has expired. Please upload it again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'));
     }
 
     return array();
@@ -289,7 +314,7 @@ function ccd_attach_payment_proof($order, $gateway_id, $token)
     $order->update_meta_data('_ccd_payment_proof_name', $info['name']);
     $order->update_meta_data('_ccd_payment_proof_type', $info['type']);
     $order->save();
-    $order->add_order_note(__('Customer uploaded a payment screenshot.', 'ccd-payment-gateway-domain'));
+    $order->add_order_note(__('Customer uploaded a payment screenshot.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'));
 
     unset($files[$token]);
     WC()->session->set('ccd_proof_files', $files);
@@ -319,7 +344,7 @@ function ccd_view_proof()
     check_admin_referer('ccd_view_proof_' . $order_id);
 
     if (!current_user_can('edit_shop_orders') && !current_user_can('manage_woocommerce')) {
-        wp_die(esc_html__('Sorry, you are not allowed to view this file.', 'ccd-payment-gateway-domain'), '', array('response' => 403));
+        wp_die(esc_html__('Sorry, you are not allowed to view this file.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), '', array('response' => 403));
     }
 
     $order    = wc_get_order($order_id);
@@ -329,7 +354,7 @@ function ccd_view_proof()
     $base     = $dir ? realpath($dir . 'orders') : false;
 
     if (!$relative || !$path || !$base || 0 !== strpos($path, $base . DIRECTORY_SEPARATOR) || !is_file($path)) {
-        wp_die(esc_html__('File not found.', 'ccd-payment-gateway-domain'), '', array('response' => 404));
+        wp_die(esc_html__('File not found.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), '', array('response' => 404));
     }
 
     $type = (string) $order->get_meta('_ccd_payment_proof_type');
@@ -370,16 +395,16 @@ function ccd_render_payment_proof_field($gateway_id)
     }
 
     $label = 'required' === $mode
-        ? __('Payment screenshot or PDF', 'ccd-payment-gateway-domain') . ' <abbr class="required" title="' . esc_attr__('required', 'ccd-payment-gateway-domain') . '">*</abbr>'
-        : __('Payment screenshot or PDF (optional)', 'ccd-payment-gateway-domain');
+        ? __('Payment screenshot or PDF', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') . ' <abbr class="required" title="' . esc_attr__('required', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') . '">*</abbr>'
+        : __('Payment screenshot or PDF (optional)', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
 
     echo '<div class="ccd-proof-field" data-gateway="' . esc_attr($gateway_id) . '">';
     echo '<label for="ccd_proof_file_' . esc_attr($gateway_id) . '">' . wp_kses($label, array('abbr' => array('class' => array(), 'title' => array()))) . '</label>';
     echo '<input type="file" id="ccd_proof_file_' . esc_attr($gateway_id) . '" class="ccd-proof-input" accept="image/jpeg,image/png,image/webp,application/pdf">';
     echo '<input type="hidden" name="ccd_payment_proof_' . esc_attr($gateway_id) . '" class="ccd-proof-token" value="' . esc_attr($token) . '">';
-    echo '<small class="ccd-proof-status">' . ($name ? esc_html__('Uploaded:', 'ccd-payment-gateway-domain') . ' ' . esc_html($name) : esc_html(sprintf(
+    echo '<small class="ccd-proof-status">' . ($name ? esc_html__('Uploaded:', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') . ' ' . esc_html($name) : esc_html(sprintf(
         /* translators: %s: maximum file size */
-        __('JPG, PNG, WebP or PDF, max %s.', 'ccd-payment-gateway-domain'),
+        __('JPG, PNG, WebP or PDF, max %s.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
         size_format(ccd_proof_max_bytes())
     ))) . '</small>';
     echo '</div>';
@@ -412,4 +437,144 @@ function ccd_proof_cleanup()
             wp_delete_file($file);
         }
     }
+}
+
+//#################################
+// UPLOAD AFTER ORDERING (thank you page, My Account > View order)
+//#################################
+
+/** Maximum uploads per order after checkout. */
+define('CCD_PROOF_MAX_ORDER_UPLOADS', 5);
+
+/**
+ * Whether the customer may still add or replace the payment screenshot.
+ *
+ * @param WC_Order $order Order.
+ * @return bool
+ */
+function ccd_order_accepts_proof($order)
+{
+    if (!is_a($order, 'WC_Order')) {
+        return false;
+    }
+    $config = ccd_gateway_config();
+    $method = $order->get_payment_method();
+    if (!isset($config[$method]) || 'off' === ccd_proof_mode($method)) {
+        return false;
+    }
+    $statuses = (array) apply_filters('ccd_proof_upload_statuses', array('pending', 'on-hold', 'advance-received'), $order);
+    return in_array($order->get_status(), $statuses, true)
+        && (int) $order->get_meta('_ccd_proof_order_uploads') < CCD_PROOF_MAX_ORDER_UPLOADS;
+}
+
+/**
+ * Whether the current visitor may upload for this order: the logged-in
+ * customer who owns it, or anyone holding the order key (thank you page link).
+ *
+ * @param WC_Order $order     Order.
+ * @param string   $order_key Order key from the request.
+ * @return bool
+ */
+function ccd_can_upload_for_order($order, $order_key)
+{
+    if (!is_a($order, 'WC_Order')) {
+        return false;
+    }
+    if ($order->get_customer_id() && get_current_user_id() === (int) $order->get_customer_id()) {
+        return true;
+    }
+    return '' !== (string) $order_key && hash_equals((string) $order->get_order_key(), (string) $order_key);
+}
+
+add_action('woocommerce_thankyou', 'ccd_render_order_proof_form', 20);
+add_action('woocommerce_view_order', 'ccd_render_order_proof_form', 20);
+/**
+ * "Upload your payment screenshot" form below the order details.
+ *
+ * @param int $order_id Order ID.
+ */
+function ccd_render_order_proof_form($order_id)
+{
+    $order = wc_get_order($order_id);
+    if (!ccd_order_accepts_proof($order)) {
+        return;
+    }
+
+    $has  = (bool) $order->get_meta('_ccd_payment_proof');
+    $done = isset($_GET['ccd_proof']) ? sanitize_key(wp_unslash($_GET['ccd_proof'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only.
+    $msg  = isset($_GET['ccd_proof_msg']) ? sanitize_text_field(wp_unslash($_GET['ccd_proof_msg'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only.
+
+    echo '<section class="ccd-order-proof">';
+    echo '<h2>' . esc_html__('Payment screenshot', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') . '</h2>';
+    if ('uploaded' === $done) {
+        echo '<p class="ccd-order-proof-ok">' . esc_html__('Thank you! Your payment screenshot was received.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') . '</p>';
+    } elseif ('error' === $done && '' !== $msg) {
+        echo '<p class="ccd-order-proof-error">' . esc_html($msg) . '</p>';
+    }
+    echo '<p>' . esc_html(
+        $has
+            ? __('We have your payment screenshot. You can upload a new one to replace it.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')
+            : __('Paid already? Upload a screenshot or PDF of your payment so we can confirm your order faster.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')
+    ) . '</p>';
+    echo '<form method="post" enctype="multipart/form-data" action="' . esc_url(admin_url('admin-post.php')) . '">';
+    echo '<input type="hidden" name="action" value="ccd_order_proof">';
+    echo '<input type="hidden" name="order_id" value="' . esc_attr($order->get_id()) . '">';
+    echo '<input type="hidden" name="order_key" value="' . esc_attr($order->get_order_key()) . '">';
+    wp_nonce_field('ccd_order_proof_' . $order->get_id(), 'ccd_order_proof_nonce');
+    echo '<input type="file" name="ccd_proof_file" accept="image/jpeg,image/png,image/webp,application/pdf" required> ';
+    echo '<button type="submit" class="button">' . esc_html($has ? __('Replace screenshot', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') : __('Upload screenshot', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')) . '</button>';
+    /* translators: %s: maximum file size */
+    echo '<br><small>' . esc_html(sprintf(__('JPG, PNG, WebP or PDF, max %s.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), size_format(ccd_proof_max_bytes()))) . '</small>';
+    echo '</form>';
+    echo '</section>';
+}
+
+add_action('admin_post_ccd_order_proof', 'ccd_handle_order_proof');
+add_action('admin_post_nopriv_ccd_order_proof', 'ccd_handle_order_proof');
+/**
+ * Handle the after-order upload form.
+ */
+function ccd_handle_order_proof()
+{
+    $order_id  = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+    $order_key = isset($_POST['order_key']) ? sanitize_text_field(wp_unslash($_POST['order_key'])) : '';
+    $order     = $order_id ? wc_get_order($order_id) : false;
+
+    if (!$order || !isset($_POST['ccd_order_proof_nonce']) || !wp_verify_nonce(sanitize_key(wp_unslash($_POST['ccd_order_proof_nonce'])), 'ccd_order_proof_' . $order_id) || !ccd_can_upload_for_order($order, $order_key)) {
+        wp_die(esc_html__('This upload link is not valid. Please open your order again and retry.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), '', array('response' => 403, 'back_link' => true));
+    }
+
+    $back = wp_get_referer() ? wp_get_referer() : $order->get_checkout_order_received_url();
+    $back = remove_query_arg(array('ccd_proof', 'ccd_proof_msg'), $back);
+
+    if (!ccd_order_accepts_proof($order)) {
+        wp_safe_redirect(add_query_arg(array('ccd_proof' => 'error', 'ccd_proof_msg' => rawurlencode(__('This order can no longer receive uploads. Please contact us.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'))), $back));
+        exit;
+    }
+
+    $stored = ccd_proof_store_upload('ccd_proof_file', 'orders/', $order->get_id() . '-');
+    if (is_wp_error($stored)) {
+        wp_safe_redirect(add_query_arg(array('ccd_proof' => 'error', 'ccd_proof_msg' => rawurlencode($stored->get_error_message())), $back));
+        exit;
+    }
+
+    $dir      = ccd_proof_dir();
+    $previous = $order->get_meta('_ccd_payment_proof');
+    if ($previous && 0 === strpos($previous, 'orders/') && $dir) {
+        wp_delete_file($dir . $previous);
+    }
+
+    $order->update_meta_data('_ccd_payment_proof', $stored['file']);
+    $order->update_meta_data('_ccd_payment_proof_name', $stored['name']);
+    $order->update_meta_data('_ccd_payment_proof_type', $stored['type']);
+    $order->update_meta_data('_ccd_proof_order_uploads', (int) $order->get_meta('_ccd_proof_order_uploads') + 1);
+    $order->save();
+    $order->add_order_note($previous
+        ? __('Customer replaced the payment screenshot after checkout.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')
+        : __('Customer uploaded a payment screenshot after checkout.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'));
+
+    do_action('ccd_payment_proof_uploaded', $order);
+
+    wp_safe_redirect(add_query_arg('ccd_proof', 'uploaded', $back));
+    exit;
 }

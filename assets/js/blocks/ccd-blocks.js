@@ -107,7 +107,7 @@
      */
     function uploadProof(gateway, file) {
         if (!PROOF) {
-            return Promise.reject(new Error(__('Upload failed. Please try again.', 'ccd-payment-gateway-domain')));
+            return Promise.reject(new Error(__('Upload failed. Please try again.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')));
         }
         if (file.size > PROOF.maxBytes) {
             return Promise.reject(new Error(PROOF.i18n.tooBig));
@@ -135,26 +135,27 @@
             type: 'button',
             className: 'ccd-copy-btn',
             'data-ccd-copy': value,
-            'data-ccd-copied': i18n.copied || __('Copied!', 'ccd-payment-gateway-domain'),
+            'data-ccd-copied': i18n.copied || __('Copied!', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
             onClick: function (e) {
                 e.preventDefault();
                 e.stopPropagation();
                 copyText(e.currentTarget);
             }
-        }, i18n.copy || __('Copy', 'ccd-payment-gateway-domain'));
+        }, i18n.copy || __('Copy', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'));
     }
 
     /**
-     * Searchable, paginated bank account picker (used when the shop has
-     * several bank accounts). Stores the chosen index in values.ccd_bank_paid_to.
+     * Searchable, paginated account picker, used when a gateway has several
+     * receiving accounts (bank accounts or wallet numbers). Stores the chosen
+     * index in values.ccd_paid_to.
      */
-    var BankPicker = function (props) {
+    var AccountPicker = function (props) {
         var accounts = props.accounts;
         var i18n = props.i18n;
         var PAGE = 5;
         var qState = useState('');
         var limitState = useState(PAGE);
-        var selState = useState(props.values.ccd_bank_paid_to !== undefined && props.values.ccd_bank_paid_to !== '' ? String(props.values.ccd_bank_paid_to) : '');
+        var selState = useState(props.values.ccd_paid_to !== undefined && props.values.ccd_paid_to !== '' ? String(props.values.ccd_paid_to) : '');
         var query = qState[0], setQuery = qState[1];
         var limit = limitState[0], setLimit = limitState[1];
         var selected = selState[0], setSelected = selState[1];
@@ -168,72 +169,65 @@
 
         var choose = function (a) {
             setSelected(String(a.index));
-            props.values.ccd_bank_paid_to = String(a.index);
+            props.values.ccd_paid_to = String(a.index);
         };
 
         if (current) {
-            var rows = [
-                ['bank', current.bank_name, false],
-                ['accountName', current.account_name, false],
-                ['number', current.account_number, true],
-                ['branch', current.branch, false],
-                ['routing', current.routing, true]
-            ].filter(function (r) { return r[1]; });
-            return el('div', { className: 'ccd-bank-picker' }, [
-                el('div', { key: 'sel', className: 'ccd-bank-selected' }, rows.map(function (r) {
-                    return el('p', { key: r[0], className: 'ccd-account-info' }, [
-                        decodeEntities(i18n[r[0]] || '') + ' ',
-                        el('strong', { key: 'v', className: 'ccd-account-value' }, decodeEntities(r[1])),
-                        r[2] ? ' ' : null,
-                        r[2] ? copyButton(r[1], i18n, 'c') : null
+            return el('div', { className: 'ccd-picker' }, [
+                el('div', { key: 'sel', className: 'ccd-picker-selected' }, (current.details || []).map(function (r, i) {
+                    return el('p', { key: 'd' + i, className: 'ccd-account-info' }, [
+                        decodeEntities(r.label) + ' ',
+                        el('strong', { key: 'v', className: 'ccd-account-value' }, decodeEntities(r.value)),
+                        r.copy ? ' ' : null,
+                        r.copy ? copyButton(r.value, i18n, 'c') : null
                     ]);
                 })),
                 el('button', {
                     key: 'change',
                     type: 'button',
-                    className: 'ccd-bank-change',
+                    className: 'ccd-picker-change',
                     onClick: function (e) {
                         e.preventDefault();
                         setSelected('');
-                        props.values.ccd_bank_paid_to = '';
+                        props.values.ccd_paid_to = '';
                     }
                 }, i18n.change)
             ]);
         }
 
-        return el('div', { className: 'ccd-bank-picker' }, [
-            el('p', { key: 't', className: 'ccd-bank-picker-title' }, el('strong', null, i18n.choose + ' *')),
+        return el('div', { className: 'ccd-picker' }, [
+            el('p', { key: 't', className: 'ccd-picker-title' }, el('strong', null, i18n.choose + ' *')),
             el('input', {
                 key: 'q',
                 type: 'search',
-                className: 'ccd-bank-search input-text',
+                className: 'ccd-picker-search input-text',
                 placeholder: i18n.search,
                 'aria-label': i18n.search,
                 autoComplete: 'off',
                 value: query,
                 onChange: function (e) { setQuery(e.target.value); setLimit(PAGE); }
             }),
-            el('div', { key: 'l', className: 'ccd-bank-list', role: 'listbox', 'aria-label': i18n.choose }, shown.map(function (a) {
+            el('div', { key: 'l', className: 'ccd-picker-list', role: 'listbox', 'aria-label': i18n.choose }, shown.map(function (a) {
                 return el('button', {
                     key: 'a' + a.index,
                     type: 'button',
                     role: 'option',
                     'aria-selected': 'false',
-                    className: 'ccd-bank-option',
+                    className: 'ccd-picker-option',
                     onClick: function (e) { e.preventDefault(); choose(a); }
                 }, [
-                    el('span', { key: 'n', className: 'ccd-bank-option-name' }, decodeEntities(a.bank_name || a.label)),
-                    el('span', { key: 'm', className: 'ccd-bank-option-meta' }, decodeEntities([a.branch, 'A/C ' + a.account_number].filter(Boolean).join(' · ')))
+                    el('span', { key: 'n', className: 'ccd-picker-option-name' }, decodeEntities(a.title)),
+                    el('span', { key: 'm', className: 'ccd-picker-option-meta' }, decodeEntities(a.meta))
                 ]);
             })),
-            matches.length === 0 ? el('p', { key: 'e', className: 'ccd-bank-empty' }, i18n.none) : null,
-            matches.length > 0 ? el('p', { key: 'f', className: 'ccd-bank-footer' }, [
-                el('small', { key: 'c', className: 'ccd-bank-count' }, (i18n.count || '%1$s / %2$s').replace('%1$s', shown.length).replace('%2$s', matches.length)),
+            matches.length === 0 ? el('p', { key: 'e', className: 'ccd-picker-empty' }, i18n.none) : null,
+            matches.length > 0 ? el('p', { key: 'f', className: 'ccd-picker-footer' }, [
+                el('small', { key: 'c', className: 'ccd-picker-count' }, (i18n.count || '%1$s / %2$s').replace('%1$s', shown.length).replace('%2$s', matches.length)),
                 ' ',
                 shown.length < matches.length ? el('button', {
                     key: 'm',
                     type: 'button',
-                    className: 'ccd-bank-more',
+                    className: 'ccd-picker-more',
                     onClick: function (e) { e.preventDefault(); setLimit(limit + PAGE); }
                 }, i18n.more) : null
             ]) : null
@@ -259,8 +253,8 @@
             return el('p', { className: 'ccd-proof-field form-row form-row-wide' }, [
                 el('label', { key: 'l', htmlFor: 'ccd_block_proof_' + id },
                     required
-                        ? __('Payment screenshot or PDF', 'ccd-payment-gateway-domain') + ' *'
-                        : __('Payment screenshot or PDF (optional)', 'ccd-payment-gateway-domain')),
+                        ? __('Payment screenshot or PDF', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') + ' *'
+                        : __('Payment screenshot or PDF (optional)', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')),
                 el('input', {
                     key: 'i',
                     id: 'ccd_block_proof_' + id,
@@ -304,14 +298,14 @@
                     var errors = [];
                     data.fields.forEach(function (f) {
                         if (!(values[f.name] || '').trim()) {
-                            errors.push(__('Please fill in:', 'ccd-payment-gateway-domain') + ' ' + decodeEntities(f.label));
+                            errors.push(__('Please fill in:', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') + ' ' + decodeEntities(f.label));
                         }
                     });
-                    if (data.bankAccounts && data.bankAccounts.length > 1 && !values.ccd_bank_paid_to) {
-                        errors.push(__('Please select the bank account you paid into.', 'ccd-payment-gateway-domain'));
+                    if (data.pickerItems && data.pickerItems.length > 1 && !values.ccd_paid_to) {
+                        errors.push((data.pickerI18n && data.pickerI18n.error) || __('Please select the account you paid to.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'));
                     }
                     if (data.proofMode === 'required' && !proof.token) {
-                        errors.push(__('Please upload a screenshot or PDF of your payment.', 'ccd-payment-gateway-domain'));
+                        errors.push(__('Please upload a screenshot or PDF of your payment.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'));
                     }
                     if (errors.length) {
                         return {
@@ -327,8 +321,8 @@
                     if (proof.token) {
                         paymentMethodData.ccd_payment_proof = proof.token;
                     }
-                    if (values.ccd_bank_paid_to) {
-                        paymentMethodData.ccd_bank_paid_to = values.ccd_bank_paid_to;
+                    if (values.ccd_paid_to) {
+                        paymentMethodData.ccd_paid_to = values.ccd_paid_to;
                     }
                     return {
                         type: emitResponse.responseTypes.SUCCESS,
@@ -391,23 +385,23 @@
                         type: 'button',
                         className: 'ccd-copy-btn',
                         'data-ccd-copy': row.value,
-                        'data-ccd-copied': __('Copied!', 'ccd-payment-gateway-domain'),
+                        'data-ccd-copied': __('Copied!', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
                         onClick: function (e) {
                             // The classic checkout script also listens for .ccd-copy-btn clicks.
                             e.preventDefault();
                             e.stopPropagation();
                             copyText(e.currentTarget);
                         }
-                    }, __('Copy', 'ccd-payment-gateway-domain')));
+                    }, __('Copy', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')));
                 }
                 children.push(el('p', { key: 'account' + i, className: 'ccd-account-info ccd-blocks-account-info' }, parts));
             });
 
             if (data.qrCode) {
                 children.push(el('p', { key: 'qr', className: 'ccd-qr-code' }, [
-                    el('img', { key: 'i', src: data.qrCode, alt: __('Scan to pay', 'ccd-payment-gateway-domain'), loading: 'lazy' }),
+                    el('img', { key: 'i', src: data.qrCode, alt: __('Scan to pay', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), loading: 'lazy' }),
                     el('br', { key: 'b' }),
-                    el('small', { key: 's' }, __('Scan this QR code with your app to pay', 'ccd-payment-gateway-domain'))
+                    el('small', { key: 's' }, __('Scan this QR code with your app to pay', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'))
                 ]));
             }
 
@@ -429,8 +423,8 @@
                 ]);
             });
 
-            if (data.bankAccounts && data.bankAccounts.length > 1) {
-                children.push(el(BankPicker, { key: 'bank_picker', accounts: data.bankAccounts, i18n: data.bankI18n || {}, values: values }));
+            if (data.pickerItems && data.pickerItems.length > 1) {
+                children.push(el(AccountPicker, { key: 'account_picker', accounts: data.pickerItems, i18n: data.pickerI18n || {}, values: values }));
             }
 
             children.push(el('div', { key: 'fields', className: 'ccd-blocks-fields' }, rows));

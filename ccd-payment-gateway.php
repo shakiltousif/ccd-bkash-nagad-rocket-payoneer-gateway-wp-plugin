@@ -5,7 +5,7 @@
  * Plugin URI: https://wordpress.org/plugins/codecarebd-bkash-nagad-rocket-payoneer-gateway
  * Description: Manual payment gateways for WooCommerce: bKash, Nagad, Rocket, Upay, CellFin, Bangla QR, bank transfer and Payoneer. Block checkout and HPOS ready.
  * Author: Shakil Ahamed
- * Version: 1.5.0
+ * Version: 1.6.0
  * Requires at least: 6.3
  * Requires PHP: 7.3
  * Tested up to: 7.1
@@ -13,7 +13,8 @@
  * WC requires at least: 6.3
  * WC tested up to: 11.2
  * Author URI: https://shakilahamed.com
- * Text Domain: ccd-payment-gateway-domain
+ * Text Domain: codecarebd-bkash-nagad-rocket-payoneer-gateway
+ * Domain Path: /languages
  * License: GPLv2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  *
@@ -22,7 +23,7 @@
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 // Define plugin constants
-define('CCD_PAYMENT_GATEWAY_VERSION', '1.5.0');
+define('CCD_PAYMENT_GATEWAY_VERSION', '1.6.0');
 define('CCD_PAYMENT_GATEWAY_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CCD_PAYMENT_GATEWAY_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -36,6 +37,16 @@ register_activation_hook(__FILE__, function () {
 register_deactivation_hook(__FILE__, function () {
     wp_clear_scheduled_hook('ccd_proof_cleanup');
 });
+
+add_action('init', 'ccd_load_textdomain');
+/**
+ * Load bundled translations (languages/). Translations from
+ * translate.wordpress.org in wp-content/languages/plugins take priority.
+ */
+function ccd_load_textdomain()
+{
+    load_plugin_textdomain('codecarebd-bkash-nagad-rocket-payoneer-gateway', false, dirname(plugin_basename(__FILE__)) . '/languages');
+}
 
 //include plugin modules
 include_once(ABSPATH . 'wp-admin/includes/plugin.php');
@@ -208,11 +219,9 @@ function ccd_save_payment_fields($order, $method, $data)
         $order->update_meta_data($field['meta'], ccd_normalize_field($field['rule'], $data[$field['name']]));
     }
 
-    if ('ccd_bank' === $method) {
-        $paid_to = ccd_bank_paid_to_label($data);
-        if ('' !== $paid_to) {
-            $order->update_meta_data('_ccd_bank_paid_to', $paid_to);
-        }
+    $paid_to = ccd_paid_to_label($method, $data);
+    if ('' !== $paid_to) {
+        $order->update_meta_data('_ccd_paid_to', $paid_to);
     }
 
     $order->save();
@@ -250,8 +259,8 @@ function ccd_validate_payment_fields($method, $data, $exclude_order_id = 0)
         }
     }
 
-    if (empty($errors) && 'ccd_bank' === $method) {
-        $errors = ccd_bank_paid_to_errors($data);
+    if (empty($errors)) {
+        $errors = ccd_paid_to_errors($method, $data);
     }
 
     if (empty($errors) && function_exists('ccd_payment_proof_errors')) {
@@ -294,8 +303,8 @@ function ccd_bkash_additional_fields_update_function($order_id)
         }
     }
 
-    if (isset($_POST['ccd_bank_paid_to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $data['ccd_bank_paid_to'] = sanitize_text_field(wp_unslash($_POST['ccd_bank_paid_to'])); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+    if (isset($_POST['ccd_paid_to_' . $method])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $data['ccd_paid_to'] = sanitize_text_field(wp_unslash($_POST['ccd_paid_to_' . $method])); // phpcs:ignore WordPress.Security.NonceVerification.Missing
     }
 
     ccd_save_payment_fields($order, $method, $data);
@@ -395,32 +404,33 @@ function ccd_bkash_admin_order_data_function($order)
                     <th><strong><?php echo esc_html($fields[1]['label']); ?></strong></th>
                     <td>: <?php echo esc_html($transaction); ?></td>
                 </tr>
-                <?php if ($order->get_meta('_ccd_bank_paid_to')) : ?>
+                <?php $paid_to = $order->get_meta('_ccd_paid_to') ? $order->get_meta('_ccd_paid_to') : $order->get_meta('_ccd_bank_paid_to'); // 1.5.0 stored bank choices as _ccd_bank_paid_to. ?>
+                <?php if ($paid_to) : ?>
                 <tr>
-                    <th><strong><?php esc_html_e('Paid Into', 'ccd-payment-gateway-domain'); ?></strong></th>
-                    <td>: <?php echo esc_html($order->get_meta('_ccd_bank_paid_to')); ?></td>
+                    <th><strong><?php esc_html_e('Paid To', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></strong></th>
+                    <td>: <?php echo esc_html($paid_to); ?></td>
                 </tr>
                 <?php endif; ?>
                 <?php if ($proof_url) : ?>
                 <tr>
-                    <th><strong><?php esc_html_e('Payment Screenshot', 'ccd-payment-gateway-domain'); ?></strong></th>
-                    <td>: <a href="<?php echo esc_url($proof_url); ?>" target="_blank" rel="noopener"><?php esc_html_e('View file', 'ccd-payment-gateway-domain'); ?></a></td>
+                    <th><strong><?php esc_html_e('Payment Screenshot', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></strong></th>
+                    <td>: <a href="<?php echo esc_url($proof_url); ?>" target="_blank" rel="noopener"><?php esc_html_e('View file', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></a></td>
                 </tr>
                 <?php endif; ?>
                 <?php if ($is_advance_payment === 'yes' && $original_total) : ?>
                 <tr>
-                    <th colspan="2"><strong style="color: #2271b1;"><?php esc_html_e('Advance Payment Information', 'ccd-payment-gateway-domain'); ?></strong></th>
+                    <th colspan="2"><strong style="color: #2271b1;"><?php esc_html_e('Advance Payment Information', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></strong></th>
                 </tr>
                 <tr>
-                    <th><strong><?php esc_html_e('Original Order Total', 'ccd-payment-gateway-domain'); ?></strong></th>
+                    <th><strong><?php esc_html_e('Original Order Total', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></strong></th>
                     <td>: <?php echo wc_price($original_total); ?></td>
                 </tr>
                 <tr>
-                    <th><strong><?php esc_html_e('Advance Amount Paid', 'ccd-payment-gateway-domain'); ?></strong></th>
+                    <th><strong><?php esc_html_e('Advance Amount Paid', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></strong></th>
                     <td>: <?php echo wc_price($advance_amount); ?> <span style="color: green;">✓</span></td>
                 </tr>
                 <tr>
-                    <th><strong><?php esc_html_e('Remaining Amount', 'ccd-payment-gateway-domain'); ?></strong></th>
+                    <th><strong><?php esc_html_e('Remaining Amount', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></strong></th>
                     <td>: <?php echo wc_price($remaining_amount); ?> <span style="color: orange;">⚠</span></td>
                 </tr>
                 <?php endif; ?>
@@ -471,24 +481,24 @@ function ccd_additional_info_order_review_fields_function($order)
         </tr>
         <?php if ($order->get_meta('_ccd_payment_proof')) : ?>
         <tr>
-            <th><?php esc_html_e('Payment Screenshot:', 'ccd-payment-gateway-domain'); ?></th>
-            <td><?php esc_html_e('Received', 'ccd-payment-gateway-domain'); ?></td>
+            <th><?php esc_html_e('Payment Screenshot:', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></th>
+            <td><?php esc_html_e('Received', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></td>
         </tr>
         <?php endif; ?>
         <?php if ($is_advance_payment === 'yes' && $original_total) : ?>
         <tr>
-            <th colspan="2"><strong style="color: #2271b1;"><?php esc_html_e('Advance Payment Information', 'ccd-payment-gateway-domain'); ?></strong></th>
+            <th colspan="2"><strong style="color: #2271b1;"><?php esc_html_e('Advance Payment Information', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></strong></th>
         </tr>
         <tr>
-            <th><?php esc_html_e('Original Order Total', 'ccd-payment-gateway-domain'); ?></th>
+            <th><?php esc_html_e('Original Order Total', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></th>
             <td><?php echo wc_price($original_total); ?></td>
         </tr>
         <tr>
-            <th><?php esc_html_e('Advance Amount Paid', 'ccd-payment-gateway-domain'); ?></th>
+            <th><?php esc_html_e('Advance Amount Paid', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></th>
             <td><?php echo wc_price($advance_amount); ?> <span style="color: green;">✓</span></td>
         </tr>
         <tr>
-            <th><?php esc_html_e('Remaining Amount', 'ccd-payment-gateway-domain'); ?></th>
+            <th><?php esc_html_e('Remaining Amount', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></th>
             <td><?php echo wc_price($remaining_amount); ?> <span style="color: orange;">⚠</span></td>
         </tr>
         <?php endif; ?>
@@ -509,8 +519,8 @@ function ccd_admin_new_column_function($columns)
     $actions = isset($new_columns['order-actions']) ? $new_columns['order-actions'] : null;
     unset($new_columns['order-actions']);
 
-    $new_columns['account_no']     = esc_html__('Account No.', 'ccd-payment-gateway-domain');
-    $new_columns['tran_id']     = esc_html__('Transaction ID', 'ccd-payment-gateway-domain');
+    $new_columns['account_no']     = esc_html__('Account No.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
+    $new_columns['tran_id']     = esc_html__('Transaction ID', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
 
     if (null !== $actions) {
         $new_columns['order-actions'] = $actions;
@@ -530,8 +540,8 @@ function ccd_admin_new_column_function_new_method($columns)
 
         if ($key ===  'order_status') {
             // Inserting after "Status" column
-            $reordered_columns['account_no'] = esc_html__('Account No.', 'ccd-payment-gateway-domain');
-            $reordered_columns['tran_id'] = esc_html__('Transaction ID', 'ccd-payment-gateway-domain');
+            $reordered_columns['account_no'] = esc_html__('Account No.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
+            $reordered_columns['tran_id'] = esc_html__('Transaction ID', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
         }
     }
     return $reordered_columns;
@@ -640,6 +650,11 @@ function ccd_admin_column_value_function_new_method($column, $order)
 // Enqueue script
 function ccd_checkout_page_enqueue_script()
 {
+    // My Account > View order shows the payment screenshot upload box.
+    if (function_exists('is_account_page') && is_account_page() && !is_checkout()) {
+        wp_enqueue_style('ccd_checkout_page-css', plugin_dir_url(__FILE__) . 'assets/css/ccd-payment-gateway-checkout.css', array(), CCD_PAYMENT_GATEWAY_VERSION);
+    }
+
     if (is_checkout()) {
 
         // CSS
@@ -678,10 +693,10 @@ function ccd_bkash_payment_validation()
             $data[$field] = sanitize_text_field(wp_unslash($_POST[$field])); // phpcs:ignore WordPress.Security.NonceVerification.Missing
         }
     }
-    if (isset($_POST['ccd_bank_paid_to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $data['ccd_bank_paid_to'] = sanitize_text_field(wp_unslash($_POST['ccd_bank_paid_to'])); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+    // Each payment box has its own picker and upload field, keyed by gateway id.
+    if (isset($_POST['ccd_paid_to_' . $method])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $data['ccd_paid_to'] = sanitize_text_field(wp_unslash($_POST['ccd_paid_to_' . $method])); // phpcs:ignore WordPress.Security.NonceVerification.Missing
     }
-    // Each payment box has its own upload field, keyed by gateway id.
     if (isset($_POST['ccd_payment_proof_' . $method])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $data['ccd_payment_proof'] = sanitize_text_field(wp_unslash($_POST['ccd_payment_proof_' . $method])); // phpcs:ignore WordPress.Security.NonceVerification.Missing
     }
@@ -705,9 +720,9 @@ add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'ccd_payment_gate
 
 function ccd_payment_gateway_action_links($actions)
 {
-    $actions[] = '<a href="' . esc_url(get_admin_url(null, 'admin.php?page=wc-settings&tab=checkout')) . '">' . __("Settings", "ccd-payment-gateway-domain") . '</a>';
-    $actions[] = '<a href="' . esc_url(get_admin_url(null, 'admin.php?page=ccd-advance-payment-settings')) . '">' . __("Advance Payment", "ccd-payment-gateway-domain") . '</a>';
-    $actions[] = '<a href="https://codecarebd.com/contact" target="_blank">' . esc_html(__("Support", "ccd-payment-gateway-domain")) . '</a>';
+    $actions[] = '<a href="' . esc_url(get_admin_url(null, 'admin.php?page=wc-settings&tab=checkout')) . '">' . __("Settings", "codecarebd-bkash-nagad-rocket-payoneer-gateway") . '</a>';
+    $actions[] = '<a href="' . esc_url(get_admin_url(null, 'admin.php?page=ccd-advance-payment-settings')) . '">' . __("Advance Payment", "codecarebd-bkash-nagad-rocket-payoneer-gateway") . '</a>';
+    $actions[] = '<a href="https://codecarebd.com/contact" target="_blank">' . esc_html(__("Support", "codecarebd-bkash-nagad-rocket-payoneer-gateway")) . '</a>';
     return $actions;
 }
 
@@ -717,12 +732,13 @@ function ccd_payment_gateway_action_links($actions)
 function ccd_register_advance_received_order_status()
 {
     register_post_status('wc-advance-received', array(
-        'label'                     => esc_html__('Advance Received', 'ccd-payment-gateway-domain'),
+        'label'                     => esc_html__('Advance Received', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
         'public'                    => true,
         'exclude_from_search'       => false,
         'show_in_admin_all_list'    => true,
         'show_in_admin_status_list' => true,
-        'label_count'               => _n_noop('Advance Received <span class="count">(%s)</span>', 'Advance Received <span class="count">(%s)</span>', 'ccd-payment-gateway-domain')
+        /* translators: %s: number of orders */
+        'label_count'               => _n_noop('Advance Received <span class="count">(%s)</span>', 'Advance Received <span class="count">(%s)</span>', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')
     ));
 }
 
@@ -732,12 +748,13 @@ function ccd_register_advance_received_order_status()
 function ccd_add_advance_received_to_order_statuses($order_statuses)
 {
     $order_statuses['wc-advance-received'] = array(
-        'label'                     => esc_html__('Advance Received', 'ccd-payment-gateway-domain'),
+        'label'                     => esc_html__('Advance Received', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
         'public'                    => true,
         'exclude_from_search'       => false,
         'show_in_admin_all_list'    => true,
         'show_in_admin_status_list' => true,
-        'label_count'               => _n_noop('Advance Received <span class="count">(%s)</span>', 'Advance Received <span class="count">(%s)</span>', 'ccd-payment-gateway-domain')
+        /* translators: %s: number of orders */
+        'label_count'               => _n_noop('Advance Received <span class="count">(%s)</span>', 'Advance Received <span class="count">(%s)</span>', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')
     );
     return $order_statuses;
 }
@@ -754,7 +771,7 @@ function ccd_add_advance_received_order_status($order_statuses)
         
         // Insert after "on-hold" status
         if ('wc-on-hold' === $key) {
-            $new_order_statuses['wc-advance-received'] = esc_html__('Advance Received', 'ccd-payment-gateway-domain');
+            $new_order_statuses['wc-advance-received'] = esc_html__('Advance Received', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
         }
     }
     
@@ -768,8 +785,8 @@ function ccd_add_advance_payment_settings_page()
 {
     add_submenu_page(
         'woocommerce',
-        esc_html__('Advance Payment Settings', 'ccd-payment-gateway-domain'),
-        esc_html__('Advance Payment', 'ccd-payment-gateway-domain'),
+        esc_html__('Advance Payment Settings', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
+        esc_html__('Advance Payment', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
         'manage_woocommerce',
         'ccd-advance-payment-settings',
         'ccd_advance_payment_settings_page'
@@ -831,10 +848,10 @@ function ccd_advance_payment_settings_page()
 
         if ('zone' === $mode && empty($inside_states)) {
             $inside_states = array('BD-13');
-            echo '<div class="notice notice-warning"><p>' . esc_html__('No "Inside Dhaka" area was selected, so Dhaka (BD-13) was used.', 'ccd-payment-gateway-domain') . '</p></div>';
+            echo '<div class="notice notice-warning"><p>' . esc_html__('No "Inside Dhaka" area was selected, so Dhaka (BD-13) was used.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') . '</p></div>';
         }
         if ('zone' === $mode && $inside_amount <= 0 && $outside_amount <= 0) {
-            echo '<div class="notice notice-warning"><p>' . esc_html__('Both zone amounts are 0, so no advance payment will be asked. Enter the inside and outside Dhaka amounts.', 'ccd-payment-gateway-domain') . '</p></div>';
+            echo '<div class="notice notice-warning"><p>' . esc_html__('Both zone amounts are 0, so no advance payment will be asked. Enter the inside and outside Dhaka amounts.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') . '</p></div>';
         }
 
         update_option('ccd_advance_payment_mode', $mode);
@@ -843,7 +860,7 @@ function ccd_advance_payment_settings_page()
         update_option('ccd_advance_outside_amount', $outside_amount);
         update_option('ccd_advance_min_order', $min_order);
 
-        echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Settings saved successfully!', 'ccd-payment-gateway-domain') . '</p></div>';
+        echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Settings saved successfully!', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') . '</p></div>';
     }
     
     $enable_advance_payment = get_option('ccd_enable_advance_payment', 'no');
@@ -859,106 +876,106 @@ function ccd_advance_payment_settings_page()
     $bd_states      = (array) WC()->countries->get_states('BD');
     ?>
     <div class="wrap">
-        <h1><?php echo esc_html__('Advance Payment Settings', 'ccd-payment-gateway-domain'); ?></h1>
+        <h1><?php echo esc_html__('Advance Payment Settings', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></h1>
         <form method="post" action="">
             <?php wp_nonce_field('ccd_advance_payment_settings'); ?>
             <table class="form-table">
                 <tr>
                     <th scope="row">
-                        <label for="ccd_enable_advance_payment"><?php echo esc_html__('Enable Advance Payment', 'ccd-payment-gateway-domain'); ?></label>
+                        <label for="ccd_enable_advance_payment"><?php echo esc_html__('Enable Advance Payment', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></label>
                     </th>
                     <td>
                         <input type="checkbox" id="ccd_enable_advance_payment" name="ccd_enable_advance_payment" value="yes" <?php checked($enable_advance_payment, 'yes'); ?>>
                         <p class="description">
-                            <?php echo esc_html__('When enabled, customers paying with these gateways pay only an advance now (the delivery charge, or a fixed amount for inside / outside Dhaka) and the rest later. The order is set to "Advance Received".', 'ccd-payment-gateway-domain'); ?>
+                            <?php echo esc_html__('When enabled, customers paying with these gateways pay only an advance now (the delivery charge, or a fixed amount for inside / outside Dhaka) and the rest later. The order is set to "Advance Received".', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?>
                         </p>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="ccd_advance_payment_mode"><?php echo esc_html__('Advance Amount', 'ccd-payment-gateway-domain'); ?></label>
+                        <label for="ccd_advance_payment_mode"><?php echo esc_html__('Advance Amount', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></label>
                     </th>
                     <td>
                         <select id="ccd_advance_payment_mode" name="ccd_advance_payment_mode">
-                            <option value="shipping" <?php selected($mode, 'shipping'); ?>><?php esc_html_e('Delivery (shipping) charge of the order', 'ccd-payment-gateway-domain'); ?></option>
-                            <option value="zone" <?php selected($mode, 'zone'); ?>><?php esc_html_e('Fixed amount: inside Dhaka / outside Dhaka', 'ccd-payment-gateway-domain'); ?></option>
+                            <option value="shipping" <?php selected($mode, 'shipping'); ?>><?php esc_html_e('Delivery (shipping) charge of the order', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></option>
+                            <option value="zone" <?php selected($mode, 'zone'); ?>><?php esc_html_e('Fixed amount: inside Dhaka / outside Dhaka', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></option>
                         </select>
-                        <p class="description"><?php esc_html_e('"Delivery charge" uses the shipping cost calculated at checkout. "Fixed amount" asks a set advance depending on the delivery district.', 'ccd-payment-gateway-domain'); ?></p>
+                        <p class="description"><?php esc_html_e('"Delivery charge" uses the shipping cost calculated at checkout. "Fixed amount" asks a set advance depending on the delivery district.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></p>
                     </td>
                 </tr>
                 <tr class="ccd-zone-row">
-                    <th scope="row"><label for="ccd_advance_inside_states"><?php esc_html_e('Inside Dhaka Areas', 'ccd-payment-gateway-domain'); ?></label></th>
+                    <th scope="row"><label for="ccd_advance_inside_states"><?php esc_html_e('Inside Dhaka Areas', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></label></th>
                     <td>
                         <select id="ccd_advance_inside_states" name="ccd_advance_inside_states[]" multiple="multiple" class="wc-enhanced-select" style="min-width:350px;">
                             <?php foreach ($bd_states as $code => $name) : ?>
                                 <option value="<?php echo esc_attr($code); ?>" <?php selected(in_array($code, $inside_states, true)); ?>><?php echo esc_html($name); ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <p class="description"><?php esc_html_e('Delivery districts charged the "inside Dhaka" amount. Default: Dhaka. Every other district (and other countries) use the outside amount.', 'ccd-payment-gateway-domain'); ?></p>
+                        <p class="description"><?php esc_html_e('Delivery districts charged the "inside Dhaka" amount. Default: Dhaka. Every other district (and other countries) use the outside amount.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></p>
                     </td>
                 </tr>
                 <tr class="ccd-zone-row">
-                    <th scope="row"><label for="ccd_advance_inside_amount"><?php esc_html_e('Inside Dhaka Amount', 'ccd-payment-gateway-domain'); ?></label></th>
+                    <th scope="row"><label for="ccd_advance_inside_amount"><?php esc_html_e('Inside Dhaka Amount', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></label></th>
                     <td><input type="number" step="0.01" min="0" id="ccd_advance_inside_amount" name="ccd_advance_inside_amount" value="<?php echo esc_attr($inside_amount); ?>" style="width:120px;"> <?php echo esc_html(get_woocommerce_currency_symbol()); ?></td>
                 </tr>
                 <tr class="ccd-zone-row">
-                    <th scope="row"><label for="ccd_advance_outside_amount"><?php esc_html_e('Outside Dhaka Amount', 'ccd-payment-gateway-domain'); ?></label></th>
+                    <th scope="row"><label for="ccd_advance_outside_amount"><?php esc_html_e('Outside Dhaka Amount', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></label></th>
                     <td><input type="number" step="0.01" min="0" id="ccd_advance_outside_amount" name="ccd_advance_outside_amount" value="<?php echo esc_attr($outside_amount); ?>" style="width:120px;"> <?php echo esc_html(get_woocommerce_currency_symbol()); ?></td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="ccd_advance_min_order"><?php esc_html_e('Minimum Order Total', 'ccd-payment-gateway-domain'); ?></label></th>
+                    <th scope="row"><label for="ccd_advance_min_order"><?php esc_html_e('Minimum Order Total', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></label></th>
                     <td>
                         <input type="number" step="0.01" min="0" id="ccd_advance_min_order" name="ccd_advance_min_order" value="<?php echo esc_attr($min_order); ?>" style="width:120px;" placeholder="0"> <?php echo esc_html(get_woocommerce_currency_symbol()); ?>
-                        <p class="description"><?php esc_html_e('Only ask for an advance when the order total is at least this amount. Leave empty or 0 to always ask.', 'ccd-payment-gateway-domain'); ?></p>
+                        <p class="description"><?php esc_html_e('Only ask for an advance when the order total is at least this amount. Leave empty or 0 to always ask.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></p>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="ccd_advance_payment_status_label"><?php echo esc_html__('Order Status Label', 'ccd-payment-gateway-domain'); ?></label>
+                        <label for="ccd_advance_payment_status_label"><?php echo esc_html__('Order Status Label', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></label>
                     </th>
                     <td>
                         <input type="text" id="ccd_advance_payment_status_label" name="ccd_advance_payment_status_label" value="<?php echo esc_attr($status_label); ?>" class="regular-text">
                         <p class="description">
-                            <?php echo esc_html__('Customize the label for the advance payment order status.', 'ccd-payment-gateway-domain'); ?>
+                            <?php echo esc_html__('Customize the label for the advance payment order status.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?>
                         </p>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="ccd_advance_payment_title"><?php echo esc_html__('Advance Payment Title', 'ccd-payment-gateway-domain'); ?></label>
+                        <label for="ccd_advance_payment_title"><?php echo esc_html__('Advance Payment Title', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></label>
                     </th>
                     <td>
-                        <input type="text" id="ccd_advance_payment_title" name="ccd_advance_payment_title" value="<?php echo esc_attr($advance_title); ?>" class="regular-text" placeholder="<?php echo esc_attr__('Advance Payment Information:', 'ccd-payment-gateway-domain'); ?>">
+                        <input type="text" id="ccd_advance_payment_title" name="ccd_advance_payment_title" value="<?php echo esc_attr($advance_title); ?>" class="regular-text" placeholder="<?php echo esc_attr__('Advance Payment Information:', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?>">
                         <p class="description">
-                            <?php echo esc_html__('Customize the title shown in the advance payment notice box. Leave empty to use default.', 'ccd-payment-gateway-domain'); ?>
+                            <?php echo esc_html__('Customize the title shown in the advance payment notice box. Leave empty to use default.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?>
                         </p>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="ccd_advance_payment_text"><?php echo esc_html__('Advance Payment Text', 'ccd-payment-gateway-domain'); ?></label>
+                        <label for="ccd_advance_payment_text"><?php echo esc_html__('Advance Payment Text', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></label>
                     </th>
                     <td>
-                        <textarea id="ccd_advance_payment_text" name="ccd_advance_payment_text" rows="3" class="large-text" placeholder="<?php echo esc_attr__('You will pay only the delivery charge as advance payment:', 'ccd-payment-gateway-domain'); ?>"><?php echo esc_textarea($advance_text); ?></textarea>
+                        <textarea id="ccd_advance_payment_text" name="ccd_advance_payment_text" rows="3" class="large-text" placeholder="<?php echo esc_attr__('You will pay only the delivery charge as advance payment:', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?>"><?php echo esc_textarea($advance_text); ?></textarea>
                         <p class="description">
-                            <?php echo esc_html__('Customize the text explaining the advance payment amount. Leave empty to use default. Use {amount} placeholder to show the advance amount dynamically.', 'ccd-payment-gateway-domain'); ?>
+                            <?php echo esc_html__('Customize the text explaining the advance payment amount. Leave empty to use default. Use {amount} placeholder to show the advance amount dynamically.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?>
                         </p>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="ccd_remaining_payment_text"><?php echo esc_html__('Remaining Payment Text', 'ccd-payment-gateway-domain'); ?></label>
+                        <label for="ccd_remaining_payment_text"><?php echo esc_html__('Remaining Payment Text', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?></label>
                     </th>
                     <td>
-                        <textarea id="ccd_remaining_payment_text" name="ccd_remaining_payment_text" rows="3" class="large-text" placeholder="<?php echo esc_attr__('Remaining amount to be paid later:', 'ccd-payment-gateway-domain'); ?>"><?php echo esc_textarea($remaining_text); ?></textarea>
+                        <textarea id="ccd_remaining_payment_text" name="ccd_remaining_payment_text" rows="3" class="large-text" placeholder="<?php echo esc_attr__('Remaining amount to be paid later:', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?>"><?php echo esc_textarea($remaining_text); ?></textarea>
                         <p class="description">
-                            <?php echo esc_html__('Customize the text explaining the remaining payment amount. Leave empty to use default. Use {amount} placeholder to show the remaining amount dynamically.', 'ccd-payment-gateway-domain'); ?>
+                            <?php echo esc_html__('Customize the text explaining the remaining payment amount. Leave empty to use default. Use {amount} placeholder to show the remaining amount dynamically.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?>
                         </p>
                     </td>
                 </tr>
             </table>
             <p class="submit">
-                <input type="submit" name="ccd_advance_payment_submit" class="button button-primary" value="<?php echo esc_attr__('Save Settings', 'ccd-payment-gateway-domain'); ?>">
+                <input type="submit" name="ccd_advance_payment_submit" class="button button-primary" value="<?php echo esc_attr__('Save Settings', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'); ?>">
             </p>
         </form>
     </div>
@@ -1072,7 +1089,7 @@ function ccd_apply_advance_payment($order, $label)
         'advance-received',
         sprintf(
             /* translators: %s: payment method label */
-            esc_html__('Advance payment received via %s. Remaining amount: ', 'ccd-payment-gateway-domain'),
+            esc_html__('Advance payment received via %s. Remaining amount: ', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
             $label
         ) . wc_price($remaining_amount)
     );
@@ -1097,7 +1114,7 @@ function ccd_apply_order_status($order, $status, $label)
         $status = 'on-hold';
     }
     /* translators: %s: payment method label */
-    $order->update_status($status, sprintf(esc_html__('Checkout with %s payment. ', 'ccd-payment-gateway-domain'), $label));
+    $order->update_status($status, sprintf(esc_html__('Checkout with %s payment. ', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), $label));
 }
 
 /**
@@ -1151,19 +1168,19 @@ function ccd_get_advance_payment_display()
     $remaining_amount = $cart_total - $advance_amount;
 
     $title = get_option('ccd_advance_payment_title', '');
-    $title = !empty($title) ? $title : __('Advance Payment Information:', 'ccd-payment-gateway-domain');
+    $title = !empty($title) ? $title : __('Advance Payment Information:', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
     $title = apply_filters('ccd_advance_payment_title', $title);
 
     $advance_text = get_option('ccd_advance_payment_text', '');
     if (empty($advance_text)) {
         $advance_text = 'zone' === get_option('ccd_advance_payment_mode', 'shipping')
-            ? __('Pay this advance now to confirm your order:', 'ccd-payment-gateway-domain')
-            : __('You will pay only the delivery charge as advance payment:', 'ccd-payment-gateway-domain');
+            ? __('Pay this advance now to confirm your order:', 'codecarebd-bkash-nagad-rocket-payoneer-gateway')
+            : __('You will pay only the delivery charge as advance payment:', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
     }
     $advance_text = apply_filters('ccd_advance_payment_text', $advance_text);
 
     $remaining_text = get_option('ccd_remaining_payment_text', '');
-    $remaining_text = !empty($remaining_text) ? $remaining_text : __('Remaining amount to be paid later:', 'ccd-payment-gateway-domain');
+    $remaining_text = !empty($remaining_text) ? $remaining_text : __('Remaining amount to be paid later:', 'codecarebd-bkash-nagad-rocket-payoneer-gateway');
     $remaining_text = apply_filters('ccd_remaining_payment_text', $remaining_text);
 
     $advance_formatted   = html_entity_decode(wp_strip_all_tags(wc_price($advance_amount, array('currency' => get_woocommerce_currency()))), ENT_QUOTES, 'UTF-8');

@@ -129,24 +129,24 @@
 }
 
 /* Bank account picker */
-.ccd-bank-picker {
+.ccd-picker {
   margin: 10px 0;
 }
 
-.ccd-bank-picker .ccd-bank-search {
+.ccd-picker .ccd-picker-search {
   width: 100%;
   box-sizing: border-box;
   padding: 8px 10px;
   margin-bottom: 8px;
 }
 
-.ccd-bank-list {
+.ccd-picker-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.ccd-bank-option {
+.ccd-picker-option {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -161,27 +161,27 @@
   font: inherit;
 }
 
-.ccd-bank-option[hidden] {
+.ccd-picker-option[hidden] {
   display: none;
 }
 
-.ccd-bank-option:hover,
-.ccd-bank-option:focus {
+.ccd-picker-option:hover,
+.ccd-picker-option:focus {
   border-color: #1f4e79;
   outline: none;
   box-shadow: 0 0 0 1px #1f4e79;
 }
 
-.ccd-bank-option-name {
+.ccd-picker-option-name {
   font-weight: 600;
 }
 
-.ccd-bank-option-meta {
+.ccd-picker-option-meta {
   font-size: 0.85em;
   opacity: 0.8;
 }
 
-.ccd-bank-footer {
+.ccd-picker-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -189,8 +189,8 @@
   margin-top: 6px;
 }
 
-.ccd-bank-more,
-.ccd-bank-change {
+.ccd-picker-more,
+.ccd-picker-change {
   padding: 4px 12px;
   border: 1px solid currentColor;
   border-radius: 4px;
@@ -200,13 +200,35 @@
   font-size: 0.9em;
 }
 
-.ccd-bank-selected {
+.ccd-picker-selected {
   padding: 8px 12px;
   border: 1px solid #1f4e79;
   border-radius: 6px;
   margin-bottom: 8px;
 }
 
-.ccd-bank-selected .ccd-account-info {
+.ccd-picker-selected .ccd-account-info {
   margin: 2px 0;
+}
+
+/* Upload after ordering */
+.ccd-order-proof {
+  margin: 24px 0;
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.ccd-order-proof h2 {
+  margin-top: 0;
+}
+
+.ccd-order-proof-ok {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.ccd-order-proof-error {
+  color: #b32d2e;
+  font-weight: 600;
 }

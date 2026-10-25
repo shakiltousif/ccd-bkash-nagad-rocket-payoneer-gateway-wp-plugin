@@ -1,0 +1,1305 @@
+# Copyright (C) 2026 Shakil Ahamed
+# This file is distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: CodeCareBD - bKash, Nagad, Rocket, Payoneer Gateway 1.5.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/codecarebd-bkash-nagad-rocket-payoneer-gateway\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-10-25T07:28:34+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: codecarebd-bkash-nagad-rocket-payoneer-gateway\n"
+
+#. Plugin Name of the plugin
+#: ccd-payment-gateway.php
+msgid "CodeCareBD - bKash, Nagad, Rocket, Payoneer Gateway"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: ccd-payment-gateway.php
+msgid "https://wordpress.org/plugins/codecarebd-bkash-nagad-rocket-payoneer-gateway"
+msgstr ""
+
+#. Description of the plugin
+#: ccd-payment-gateway.php
+msgid "Manual payment gateways for WooCommerce: bKash, Nagad, Rocket, Upay, CellFin, Bangla QR, bank transfer and Payoneer. Block checkout and HPOS ready."
+msgstr ""
+
+#. Author of the plugin
+#: ccd-payment-gateway.php
+msgid "Shakil Ahamed"
+msgstr ""
+
+#. Author URI of the plugin
+#: ccd-payment-gateway.php
+msgid "https://shakilahamed.com"
+msgstr ""
+
+#: ccd-payment-gateway.php:410
+msgid "Paid To"
+msgstr ""
+
+#: ccd-payment-gateway.php:416
+#: includes/ccd-features.php:298
+msgid "Payment Screenshot"
+msgstr ""
+
+#: ccd-payment-gateway.php:417
+msgid "View file"
+msgstr ""
+
+#: ccd-payment-gateway.php:422
+#: ccd-payment-gateway.php:490
+msgid "Advance Payment Information"
+msgstr ""
+
+#: ccd-payment-gateway.php:425
+#: ccd-payment-gateway.php:493
+msgid "Original Order Total"
+msgstr ""
+
+#: ccd-payment-gateway.php:429
+#: ccd-payment-gateway.php:497
+msgid "Advance Amount Paid"
+msgstr ""
+
+#: ccd-payment-gateway.php:433
+#: ccd-payment-gateway.php:501
+msgid "Remaining Amount"
+msgstr ""
+
+#: ccd-payment-gateway.php:484
+msgid "Payment Screenshot:"
+msgstr ""
+
+#: ccd-payment-gateway.php:485
+msgid "Received"
+msgstr ""
+
+#: ccd-payment-gateway.php:522
+#: ccd-payment-gateway.php:543
+msgid "Account No."
+msgstr ""
+
+#: ccd-payment-gateway.php:523
+#: ccd-payment-gateway.php:544
+#: includes/ccd-features.php:101
+#: includes/ccd-features.php:165
+#: includes/classes/CCD_Payment_Payoneer.php:96
+msgid "Transaction ID"
+msgstr ""
+
+#: ccd-payment-gateway.php:723
+msgid "Settings"
+msgstr ""
+
+#: ccd-payment-gateway.php:724
+#: ccd-payment-gateway.php:789
+msgid "Advance Payment"
+msgstr ""
+
+#: ccd-payment-gateway.php:725
+msgid "Support"
+msgstr ""
+
+#: ccd-payment-gateway.php:735
+#: ccd-payment-gateway.php:751
+#: ccd-payment-gateway.php:774
+msgid "Advance Received"
+msgstr ""
+
+#. translators: %s: number of orders
+#: ccd-payment-gateway.php:741
+#: ccd-payment-gateway.php:757
+#, php-format
+msgid "Advance Received <span class=\"count\">(%s)</span>"
+msgid_plural "Advance Received <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: ccd-payment-gateway.php:788
+#: ccd-payment-gateway.php:879
+msgid "Advance Payment Settings"
+msgstr ""
+
+#: ccd-payment-gateway.php:851
+msgid "No \"Inside Dhaka\" area was selected, so Dhaka (BD-13) was used."
+msgstr ""
+
+#: ccd-payment-gateway.php:854
+msgid "Both zone amounts are 0, so no advance payment will be asked. Enter the inside and outside Dhaka amounts."
+msgstr ""
+
+#: ccd-payment-gateway.php:863
+msgid "Settings saved successfully!"
+msgstr ""
+
+#: ccd-payment-gateway.php:885
+msgid "Enable Advance Payment"
+msgstr ""
+
+#: ccd-payment-gateway.php:890
+msgid "When enabled, customers paying with these gateways pay only an advance now (the delivery charge, or a fixed amount for inside / outside Dhaka) and the rest later. The order is set to \"Advance Received\"."
+msgstr ""
+
+#: ccd-payment-gateway.php:896
+msgid "Advance Amount"
+msgstr ""
+
+#: ccd-payment-gateway.php:900
+msgid "Delivery (shipping) charge of the order"
+msgstr ""
+
+#: ccd-payment-gateway.php:901
+msgid "Fixed amount: inside Dhaka / outside Dhaka"
+msgstr ""
+
+#: ccd-payment-gateway.php:903
+msgid "\"Delivery charge\" uses the shipping cost calculated at checkout. \"Fixed amount\" asks a set advance depending on the delivery district."
+msgstr ""
+
+#: ccd-payment-gateway.php:907
+msgid "Inside Dhaka Areas"
+msgstr ""
+
+#: ccd-payment-gateway.php:914
+msgid "Delivery districts charged the \"inside Dhaka\" amount. Default: Dhaka. Every other district (and other countries) use the outside amount."
+msgstr ""
+
+#: ccd-payment-gateway.php:918
+msgid "Inside Dhaka Amount"
+msgstr ""
+
+#: ccd-payment-gateway.php:922
+msgid "Outside Dhaka Amount"
+msgstr ""
+
+#: ccd-payment-gateway.php:926
+msgid "Minimum Order Total"
+msgstr ""
+
+#: ccd-payment-gateway.php:929
+msgid "Only ask for an advance when the order total is at least this amount. Leave empty or 0 to always ask."
+msgstr ""
+
+#: ccd-payment-gateway.php:934
+msgid "Order Status Label"
+msgstr ""
+
+#: ccd-payment-gateway.php:939
+msgid "Customize the label for the advance payment order status."
+msgstr ""
+
+#: ccd-payment-gateway.php:945
+msgid "Advance Payment Title"
+msgstr ""
+
+#: ccd-payment-gateway.php:948
+#: ccd-payment-gateway.php:1171
+msgid "Advance Payment Information:"
+msgstr ""
+
+#: ccd-payment-gateway.php:950
+msgid "Customize the title shown in the advance payment notice box. Leave empty to use default."
+msgstr ""
+
+#: ccd-payment-gateway.php:956
+msgid "Advance Payment Text"
+msgstr ""
+
+#: ccd-payment-gateway.php:959
+#: ccd-payment-gateway.php:1178
+msgid "You will pay only the delivery charge as advance payment:"
+msgstr ""
+
+#: ccd-payment-gateway.php:961
+msgid "Customize the text explaining the advance payment amount. Leave empty to use default. Use {amount} placeholder to show the advance amount dynamically."
+msgstr ""
+
+#: ccd-payment-gateway.php:967
+msgid "Remaining Payment Text"
+msgstr ""
+
+#: ccd-payment-gateway.php:970
+#: ccd-payment-gateway.php:1183
+msgid "Remaining amount to be paid later:"
+msgstr ""
+
+#: ccd-payment-gateway.php:972
+msgid "Customize the text explaining the remaining payment amount. Leave empty to use default. Use {amount} placeholder to show the remaining amount dynamically."
+msgstr ""
+
+#: ccd-payment-gateway.php:978
+msgid "Save Settings"
+msgstr ""
+
+#. translators: %s: payment method label
+#: ccd-payment-gateway.php:1092
+#, php-format
+msgid "Advance payment received via %s. Remaining amount: "
+msgstr ""
+
+#. translators: %s: payment method label
+#: ccd-payment-gateway.php:1117
+#, php-format
+msgid "Checkout with %s payment. "
+msgstr ""
+
+#: ccd-payment-gateway.php:1177
+msgid "Pay this advance now to confirm your order:"
+msgstr ""
+
+#: includes/ccd-features.php:52
+#: includes/classes/CCD_Payment_Bkash.php:66
+#: includes/classes/CCD_Payment_Bkash.php:119
+msgid "bKash Number"
+msgstr ""
+
+#: includes/ccd-features.php:53
+#: includes/classes/CCD_Payment_Bkash.php:123
+msgid "bKash Transaction ID"
+msgstr ""
+
+#: includes/ccd-features.php:68
+#: includes/classes/CCD_Payment_Nagad.php:63
+#: includes/classes/CCD_Payment_Nagad.php:114
+msgid "Nagad Number"
+msgstr ""
+
+#: includes/ccd-features.php:69
+#: includes/classes/CCD_Payment_Nagad.php:118
+msgid "Nagad Transaction ID"
+msgstr ""
+
+#: includes/ccd-features.php:84
+#: includes/classes/CCD_Payment_Rocket.php:63
+#: includes/classes/CCD_Payment_Rocket.php:115
+msgid "Rocket Number"
+msgstr ""
+
+#: includes/ccd-features.php:85
+#: includes/classes/CCD_Payment_Rocket.php:119
+msgid "Rocket Transaction ID"
+msgstr ""
+
+#: includes/ccd-features.php:100
+#: includes/classes/CCD_Payment_Payoneer.php:92
+msgid "Payoneer Email"
+msgstr ""
+
+#: includes/ccd-features.php:116
+#: includes/classes/class-ccd-gateway-base.php:256
+msgid "Upay Number"
+msgstr ""
+
+#: includes/ccd-features.php:117
+msgid "Upay Transaction ID"
+msgstr ""
+
+#: includes/ccd-features.php:132
+msgid "Your CellFin Mobile or Account Number"
+msgstr ""
+
+#: includes/ccd-features.php:133
+msgid "CellFin Transaction ID / Reference"
+msgstr ""
+
+#: includes/ccd-features.php:148
+msgid "Your Bank Account Name or Number"
+msgstr ""
+
+#: includes/ccd-features.php:149
+msgid "Transfer Reference / Transaction ID"
+msgstr ""
+
+#: includes/ccd-features.php:164
+msgid "Mobile or Account Number You Paid From"
+msgstr ""
+
+#: includes/ccd-features.php:232
+msgid "QR Code Image"
+msgstr ""
+
+#: includes/ccd-features.php:235
+msgid "Optional. Upload your payment QR code to the Media Library and paste its URL here (or use the Select image button). It is shown on the checkout page so customers can scan to pay."
+msgstr ""
+
+#: includes/ccd-features.php:245
+msgid "Charge Type"
+msgstr ""
+
+#: includes/ccd-features.php:249
+#: includes/ccd-features.php:319
+msgid "Percentage of order total"
+msgstr ""
+
+#: includes/ccd-features.php:250
+#: includes/ccd-features.php:320
+msgid "Fixed amount"
+msgstr ""
+
+#: includes/ccd-features.php:254
+msgid "How the send money charge is calculated."
+msgstr ""
+
+#: includes/ccd-features.php:257
+msgid "Charge Amount"
+msgstr ""
+
+#: includes/ccd-features.php:262
+msgid "Percentage (e.g. 1.85) or fixed amount in your store currency, depending on Charge Type."
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/ccd-features.php:268
+#, php-format
+msgid "Add %s \"Send Money\" charge to the order total"
+msgstr ""
+
+#: includes/ccd-features.php:271
+msgid "Set the charge type and amount below."
+msgstr ""
+
+#: includes/ccd-features.php:276
+#: includes/ccd-features.php:461
+#: includes/classes/class-ccd-gateway-base.php:269
+msgid "Merchant"
+msgstr ""
+
+#: includes/ccd-features.php:283
+msgid "More Numbers"
+msgstr ""
+
+#: includes/ccd-features.php:286
+msgid "Optional. Add more receiving numbers. With more than one number, customers search and choose the number they sent money to, and the order shows which one."
+msgstr ""
+
+#: includes/ccd-features.php:292
+msgid "Extra options"
+msgstr ""
+
+#: includes/ccd-features.php:302
+msgid "Off"
+msgstr ""
+
+#: includes/ccd-features.php:303
+msgid "Optional - customer may upload a screenshot or PDF"
+msgstr ""
+
+#: includes/ccd-features.php:304
+msgid "Required - customer must upload a screenshot or PDF"
+msgstr ""
+
+#. translators: %s: maximum file size
+#: includes/ccd-features.php:309
+#, php-format
+msgid "Let customers attach a payment screenshot (JPG, PNG, WebP or PDF, max %s) at checkout, in addition to the transaction ID. Files are stored privately and only shop managers can view them."
+msgstr ""
+
+#: includes/ccd-features.php:315
+msgid "Prepayment Discount Type"
+msgstr ""
+
+#: includes/ccd-features.php:325
+msgid "Prepayment Discount"
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/ccd-features.php:332
+#, php-format
+msgid "Optional discount for customers who pay with %s, to encourage prepayment over cash on delivery. Leave empty or 0 for no discount."
+msgstr ""
+
+#: includes/ccd-features.php:338
+msgid "Minimum Order Amount"
+msgstr ""
+
+#: includes/ccd-features.php:341
+msgid "No minimum"
+msgstr ""
+
+#: includes/ccd-features.php:343
+msgid "Hide this payment method when the order amount (products after coupons, before shipping) is below this value. Leave empty for no limit."
+msgstr ""
+
+#: includes/ccd-features.php:346
+msgid "Maximum Order Amount"
+msgstr ""
+
+#: includes/ccd-features.php:349
+msgid "No maximum"
+msgstr ""
+
+#: includes/ccd-features.php:351
+msgid "Hide this payment method when the order amount is above this value, e.g. your wallet's daily send money limit. Leave empty for no limit."
+msgstr ""
+
+#. translators: %s: payment method, e.g. bKash
+#: includes/ccd-features.php:427
+#, php-format
+msgid "%s Number :"
+msgstr ""
+
+#. translators: 1: payment method, e.g. bKash, 2: account type, e.g. Agent
+#: includes/ccd-features.php:430
+#, php-format
+msgid "%1$s %2$s Number :"
+msgstr ""
+
+#: includes/ccd-features.php:454
+#: includes/classes/class-ccd-gateway-base.php:307
+msgid "Bank account number"
+msgstr ""
+
+#: includes/ccd-features.php:455
+#: includes/classes/class-ccd-gateway-base.php:308
+msgid "CellFin mobile number"
+msgstr ""
+
+#: includes/ccd-features.php:459
+#: includes/classes/CCD_Payment_Bkash.php:78
+#: includes/classes/CCD_Payment_Nagad.php:75
+#: includes/classes/CCD_Payment_Rocket.php:75
+#: includes/classes/class-ccd-gateway-base.php:267
+msgid "Personal"
+msgstr ""
+
+#: includes/ccd-features.php:460
+#: includes/classes/CCD_Payment_Bkash.php:77
+#: includes/classes/CCD_Payment_Nagad.php:74
+#: includes/classes/CCD_Payment_Rocket.php:74
+#: includes/classes/class-ccd-gateway-base.php:268
+msgid "Agent"
+msgstr ""
+
+#: includes/ccd-features.php:480
+#: includes/ccd-features.php:1513
+msgid "Bank :"
+msgstr ""
+
+#: includes/ccd-features.php:481
+#: includes/ccd-features.php:1514
+msgid "Account Name :"
+msgstr ""
+
+#: includes/ccd-features.php:482
+#: includes/ccd-features.php:1515
+msgid "Account Number :"
+msgstr ""
+
+#: includes/ccd-features.php:483
+#: includes/ccd-features.php:1516
+msgid "Branch :"
+msgstr ""
+
+#: includes/ccd-features.php:484
+#: includes/ccd-features.php:1517
+msgid "Routing Number :"
+msgstr ""
+
+#: includes/ccd-features.php:502
+#: includes/ccd-features.php:1549
+msgid "CellFin Number :"
+msgstr ""
+
+#: includes/ccd-features.php:502
+#: includes/ccd-features.php:1549
+msgid "Islami Bank Account Number :"
+msgstr ""
+
+#: includes/ccd-features.php:553
+msgid "Choose the account you paid into"
+msgstr ""
+
+#: includes/ccd-features.php:554
+msgid "Choose the number you sent money to"
+msgstr ""
+
+#: includes/ccd-features.php:556
+msgid "Search bank, branch, account name or number"
+msgstr ""
+
+#: includes/ccd-features.php:557
+msgid "Search by name or number"
+msgstr ""
+
+#: includes/ccd-features.php:559
+msgid "Show more accounts"
+msgstr ""
+
+#: includes/ccd-features.php:560
+msgid "Show more numbers"
+msgstr ""
+
+#: includes/ccd-features.php:561
+msgid "Nothing matches your search."
+msgstr ""
+
+#: includes/ccd-features.php:563
+msgid "Change account"
+msgstr ""
+
+#: includes/ccd-features.php:564
+msgid "Change number"
+msgstr ""
+
+#: includes/ccd-features.php:565
+#: includes/ccd-features.php:1601
+#: assets/js/blocks/ccd-blocks.js:144
+#: assets/js/blocks/ccd-blocks.js:395
+msgid "Copy"
+msgstr ""
+
+#: includes/ccd-features.php:566
+#: includes/ccd-features.php:1601
+#: assets/js/blocks/ccd-blocks.js:138
+#: assets/js/blocks/ccd-blocks.js:388
+msgid "Copied!"
+msgstr ""
+
+#. translators: 1: shown count, 2: total count
+#: includes/ccd-features.php:568
+#, php-format
+msgid "Showing %1$s of %2$s"
+msgstr ""
+
+#: includes/ccd-features.php:570
+msgid "Please select the bank account you paid into."
+msgstr ""
+
+#: includes/ccd-features.php:571
+msgid "Please select the number you sent money to."
+msgstr ""
+
+#: includes/ccd-features.php:583
+msgid "Bank account"
+msgstr ""
+
+#. translators: 1: bank name, 2: account number
+#: includes/ccd-features.php:585
+#, php-format
+msgid "%1$s - A/C %2$s"
+msgstr ""
+
+#: includes/ccd-features.php:659
+msgid "Number"
+msgstr ""
+
+#: includes/ccd-features.php:660
+msgid "Account Type"
+msgstr ""
+
+#: includes/ccd-features.php:661
+msgid "Label (optional)"
+msgstr ""
+
+#: includes/ccd-features.php:674
+msgid "e.g. Shop 2"
+msgstr ""
+
+#: includes/ccd-features.php:681
+msgid "+ Add number"
+msgstr ""
+
+#: includes/ccd-features.php:682
+msgid "Remove selected number(s)"
+msgstr ""
+
+#. translators: 1: row number, 2: entered number
+#: includes/ccd-features.php:742
+#, php-format
+msgid "More numbers, row %1$d: \"%2$s\" is not a valid number and was not saved."
+msgstr ""
+
+#. translators: %s: number
+#: includes/ccd-features.php:747
+#, php-format
+msgid "%s is listed twice; the duplicate was removed."
+msgstr ""
+
+#. translators: %s: field label, e.g. "bKash Number"
+#: includes/ccd-features.php:863
+#, php-format
+msgid "Please enter %s."
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/ccd-features.php:869
+#, php-format
+msgid "Please enter a valid 11-digit %s mobile number, e.g. 017XXXXXXXX."
+msgstr ""
+
+#: includes/ccd-features.php:871
+msgid "Please enter a valid Rocket number: your 11-digit mobile number or 12-digit Rocket account number."
+msgstr ""
+
+#: includes/ccd-features.php:873
+msgid "Please enter a valid mobile number (017XXXXXXXX) or account number (10-20 digits)."
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/ccd-features.php:876
+#, php-format
+msgid "Please enter a valid %s email address."
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/ccd-features.php:879
+#, php-format
+msgid "Please enter a valid %s transaction ID (5-40 letters or numbers, as shown in your app or SMS)."
+msgstr ""
+
+#: includes/ccd-features.php:881
+msgid "Please enter a valid transaction reference (at least 4 characters)."
+msgstr ""
+
+#. translators: %s: field label
+#: includes/ccd-features.php:884
+#, php-format
+msgid "Please enter a valid %s."
+msgstr ""
+
+#. translators: 1: charge amount (e.g. 1.85% or ৳20), 2: payment method label
+#: includes/ccd-features.php:957
+#, php-format
+msgid "Note: %1$s %2$s \"Send Money\" charge will be added to the order total."
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/ccd-features.php:996
+#, php-format
+msgid "%s Discount"
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/ccd-features.php:1020
+#, php-format
+msgid "%s Charge"
+msgstr ""
+
+#. translators: 1: discount (e.g. 5% or ৳50), 2: payment method label
+#: includes/ccd-features.php:1063
+#, php-format
+msgid "Pay with %2$s and get %1$s off."
+msgstr ""
+
+#. translators: %d: row number
+#: includes/ccd-features.php:1155
+#, php-format
+msgid "Bank account %d has no account number and was removed."
+msgstr ""
+
+#. translators: %d: row number
+#: includes/ccd-features.php:1160
+#, php-format
+msgid "Bank account %d: account number must be 10-20 digits. This account was not saved."
+msgstr ""
+
+#. translators: %d: row number
+#: includes/ccd-features.php:1166
+#, php-format
+msgid "Bank account %d: routing number must be exactly 9 digits. It was cleared."
+msgstr ""
+
+#: includes/ccd-features.php:1179
+msgid "Bank Transfer is enabled but has no bank account. It stays hidden at checkout until you add one."
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/ccd-features.php:1188
+#, php-format
+msgid "%s number must be an 11-digit mobile number like 017XXXXXXXX."
+msgstr ""
+
+#: includes/ccd-features.php:1193
+msgid "Rocket number must be your 11-digit mobile number or 12-digit Rocket account number."
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/ccd-features.php:1199
+#, php-format
+msgid "%s account number must contain 10-20 digits (or an 11-digit mobile number)."
+msgstr ""
+
+#: includes/ccd-features.php:1202
+msgid "Payoneer recipient email is not a valid email address."
+msgstr ""
+
+#. translators: %s: previous value
+#: includes/ccd-features.php:1207
+#, php-format
+msgid "The previous value (%s) was kept."
+msgstr ""
+
+#: includes/ccd-features.php:1208
+msgid "The value was not saved."
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/ccd-features.php:1223
+#, php-format
+msgid "%s is enabled but has no receiving number/account. Customers will not know where to send money."
+msgstr ""
+
+#: includes/ccd-features.php:1231
+msgid "QR code must be an image URL (PNG, JPG, WebP, GIF or SVG). Use the \"Select image\" button."
+msgstr ""
+
+#: includes/ccd-features.php:1237
+msgid "Bangla QR needs your QR code image. It stays hidden at checkout until you add one."
+msgstr ""
+
+#: includes/ccd-features.php:1249
+msgid "Charge and discount amounts cannot be negative."
+msgstr ""
+
+#: includes/ccd-features.php:1253
+msgid "A percentage charge or discount cannot be more than 100%."
+msgstr ""
+
+#: includes/ccd-features.php:1265
+msgid "Minimum order amount is higher than the maximum, so this payment method would never show. The maximum was cleared."
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/ccd-features.php:1308
+#, php-format
+msgid "%s is enabled but has no QR code image, so it is hidden at checkout."
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/ccd-features.php:1315
+#, php-format
+msgid "%s is enabled but has no receiving number/account."
+msgstr ""
+
+#: includes/ccd-features.php:1322
+msgid "CodeCareBD Payment Gateway:"
+msgstr ""
+
+#: includes/ccd-features.php:1350
+msgid "Advance payment notice for the current cart."
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/ccd-features.php:1478
+#, php-format
+msgid "This %s transaction ID has already been used for another order. Please check the transaction ID or contact us."
+msgstr ""
+
+#: includes/ccd-features.php:1543
+msgid "Payoneer Recipient Email :"
+msgstr ""
+
+#: includes/ccd-features.php:1546
+msgid "Merchant Name :"
+msgstr ""
+
+#: includes/ccd-features.php:1581
+#: includes/ccd-payment-proof.php:398
+#: includes/classes/class-ccd-gateway-base.php:171
+msgid "required"
+msgstr ""
+
+#: includes/ccd-features.php:1609
+#: assets/js/blocks/ccd-blocks.js:402
+msgid "Scan to pay"
+msgstr ""
+
+#: includes/ccd-features.php:1609
+#: assets/js/blocks/ccd-blocks.js:404
+msgid "Scan this QR code with your app to pay"
+msgstr ""
+
+#: includes/ccd-features.php:1645
+msgid "Select image"
+msgstr ""
+
+#: includes/ccd-features.php:1646
+msgid "Choose QR code image"
+msgstr ""
+
+#: includes/ccd-features.php:1701
+msgid "You have received 10+ orders with CodeCareBD Payment Gateway. If it helps your store, could you leave a quick review on WordPress.org? It helps other store owners find the plugin."
+msgstr ""
+
+#: includes/ccd-features.php:1703
+msgid "Leave a review"
+msgstr ""
+
+#: includes/ccd-features.php:1704
+msgid "Maybe later"
+msgstr ""
+
+#: includes/ccd-features.php:1705
+msgid "I already did"
+msgstr ""
+
+#: includes/ccd-features.php:1717
+msgid "Sorry, you are not allowed to do that."
+msgstr ""
+
+#. translators: %s: maximum file size, e.g. 2 MB
+#: includes/ccd-payment-proof.php:37
+#, php-format
+msgid "File is too large. Maximum size is %s."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:127
+msgid "Uploading..."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:128
+#: includes/ccd-payment-proof.php:405
+msgid "Uploaded:"
+msgstr ""
+
+#. translators: %s: maximum file size
+#: includes/ccd-payment-proof.php:131
+#: includes/ccd-payment-proof.php:407
+#: includes/ccd-payment-proof.php:527
+#, php-format
+msgid "JPG, PNG, WebP or PDF, max %s."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:132
+#: includes/ccd-payment-proof.php:159
+#: includes/ccd-payment-proof.php:183
+#: includes/ccd-payment-proof.php:189
+#: assets/js/blocks/ccd-blocks.js:110
+msgid "Upload failed. Please try again."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:148
+msgid "No file received."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:156
+msgid "Please choose a file to upload."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:168
+msgid "Please upload a JPG, PNG, WebP or PDF file."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:175
+msgid "This PDF file appears to be damaged."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:178
+msgid "This image file appears to be damaged."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:203
+msgid "Your session has expired. Please reload the page and try again."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:209
+msgid "File upload is not enabled for this payment method."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:213
+msgid "Your cart is empty."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:219
+msgid "Too many uploads. Please contact us if you need help."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:270
+#: assets/js/blocks/ccd-blocks.js:308
+msgid "Please upload a screenshot or PDF of your payment."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:276
+msgid "Your payment screenshot upload has expired. Please upload it again."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:317
+msgid "Customer uploaded a payment screenshot."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:347
+msgid "Sorry, you are not allowed to view this file."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:357
+msgid "File not found."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:398
+#: assets/js/blocks/ccd-blocks.js:256
+msgid "Payment screenshot or PDF"
+msgstr ""
+
+#: includes/ccd-payment-proof.php:399
+#: assets/js/blocks/ccd-blocks.js:257
+msgid "Payment screenshot or PDF (optional)"
+msgstr ""
+
+#: includes/ccd-payment-proof.php:508
+msgid "Payment screenshot"
+msgstr ""
+
+#: includes/ccd-payment-proof.php:510
+msgid "Thank you! Your payment screenshot was received."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:516
+msgid "We have your payment screenshot. You can upload a new one to replace it."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:517
+msgid "Paid already? Upload a screenshot or PDF of your payment so we can confirm your order faster."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:525
+msgid "Replace screenshot"
+msgstr ""
+
+#: includes/ccd-payment-proof.php:525
+msgid "Upload screenshot"
+msgstr ""
+
+#: includes/ccd-payment-proof.php:544
+msgid "This upload link is not valid. Please open your order again and retry."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:551
+msgid "This order can no longer receive uploads. Please contact us."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:573
+msgid "Customer replaced the payment screenshot after checkout."
+msgstr ""
+
+#: includes/ccd-payment-proof.php:574
+msgid "Customer uploaded a payment screenshot after checkout."
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:18
+msgid "bKash Gateway"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:19
+msgid "Take Payments By Bkash. So that we can easily accept payments by Confirming Transaction ID and Customer Billing Number."
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:43
+#: includes/classes/CCD_Payment_Nagad.php:40
+#: includes/classes/CCD_Payment_Payoneer.php:37
+#: includes/classes/CCD_Payment_Rocket.php:40
+#: includes/classes/class-ccd-gateway-base.php:66
+msgid "Enable/Disable"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:48
+#: includes/classes/CCD_Payment_Nagad.php:45
+#: includes/classes/CCD_Payment_Payoneer.php:42
+#: includes/classes/CCD_Payment_Rocket.php:45
+#: includes/classes/class-ccd-gateway-base.php:73
+msgid "Title"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:50
+msgid "Payment With bKash"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:53
+#: includes/classes/CCD_Payment_Nagad.php:50
+#: includes/classes/CCD_Payment_Payoneer.php:47
+#: includes/classes/CCD_Payment_Rocket.php:50
+#: includes/classes/class-ccd-gateway-base.php:78
+msgid "Description"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:55
+#: includes/classes/CCD_Payment_Nagad.php:52
+#: includes/classes/CCD_Payment_Payoneer.php:49
+#: includes/classes/CCD_Payment_Rocket.php:52
+msgid "Please fill up this form to confirm the payment"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:59
+#: includes/classes/CCD_Payment_Nagad.php:56
+#: includes/classes/CCD_Payment_Payoneer.php:53
+#: includes/classes/CCD_Payment_Rocket.php:56
+#: includes/classes/class-ccd-gateway-base.php:84
+msgid "Thank you page message"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:61
+#: includes/classes/CCD_Payment_Nagad.php:58
+#: includes/classes/CCD_Payment_Payoneer.php:55
+#: includes/classes/CCD_Payment_Rocket.php:58
+msgid "Thank you page message that will be added to the thank you page and emails."
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:62
+msgid "Thanks for purchasing through bKash. We will check and give you update as soon as possible."
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:67
+msgid "Add a bKash mobile no which will be shown in checkout page"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:72
+msgid "Bkash Account Type"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:75
+msgid "Select bKash account type"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:84
+msgid "Enable bKash Charge"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:86
+msgid "Add 1.85% bKash \"Send Money\" charge to the net price"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:88
+msgid "If a product price is 1000 then customer have to pay ( 1000 + 18.5 ) = 1018.5 Here 18.5 is bKash send money charge"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:92
+#: includes/classes/CCD_Payment_Nagad.php:89
+#: includes/classes/CCD_Payment_Payoneer.php:66
+#: includes/classes/CCD_Payment_Rocket.php:89
+#: includes/classes/class-ccd-gateway-base.php:105
+msgid "Order Status"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Bkash.php:95
+#: includes/classes/CCD_Payment_Nagad.php:92
+#: includes/classes/CCD_Payment_Payoneer.php:69
+#: includes/classes/CCD_Payment_Rocket.php:92
+msgid "Choose whether status you wish after checkout."
+msgstr ""
+
+#: includes/classes/CCD_Payment_Nagad.php:17
+msgid "Nagad Gateway"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Nagad.php:18
+msgid "Take Payments By Nagad. So that we can easily accept payments by Confirming Transaction ID and Customer Billing Number."
+msgstr ""
+
+#: includes/classes/CCD_Payment_Nagad.php:47
+msgid "Payment With Nagad"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Nagad.php:59
+msgid "Thanks for purchasing through Nagad. We will check and give you update as soon as possible."
+msgstr ""
+
+#: includes/classes/CCD_Payment_Nagad.php:64
+msgid "Add a Nagad mobile no which will be shown in checkout page"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Nagad.php:69
+msgid "Nagad Account Type"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Nagad.php:72
+msgid "Select Nagad account type"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Nagad.php:81
+msgid "Enable Nagad Charge"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Nagad.php:83
+msgid "Add 1.45% Nagad \"Send Money\" charge to the net price"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Nagad.php:85
+msgid "If a product price is 1000 then customer have to pay ( 1000 + 14.5 ) = 1014.5 Here 14.5 is Nagad send money charge"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Payoneer.php:16
+msgid "Payoneer Gateway"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Payoneer.php:17
+msgid "Take Payments By Payoneer. So that we can easily accept payments by Confirming Transaction ID and Customer Billing Number."
+msgstr ""
+
+#: includes/classes/CCD_Payment_Payoneer.php:44
+msgid "Payment With Payoneer"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Payoneer.php:56
+msgid "Thanks for purchasing through Payoneer. We will check and give you update as soon as possible."
+msgstr ""
+
+#: includes/classes/CCD_Payment_Payoneer.php:60
+msgid "Payoneer Recipient Email"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Payoneer.php:61
+msgid "Add a Payoneer email which will be shown in checkout page"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Rocket.php:17
+msgid "Rocket Gateway"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Rocket.php:18
+msgid "Take Payments By Rocket. So that we can easily accept payments by Confirming Transaction ID and Customer Billing Number."
+msgstr ""
+
+#: includes/classes/CCD_Payment_Rocket.php:47
+msgid "Payment With Rocket"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Rocket.php:59
+msgid "Thanks for purchasing through Rocket. We will check and give you update as soon as possible."
+msgstr ""
+
+#: includes/classes/CCD_Payment_Rocket.php:64
+msgid "Add a Rocket mobile no which will be shown in checkout page"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Rocket.php:69
+msgid "Rocket Account Type"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Rocket.php:72
+msgid "Select Rocket account type"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Rocket.php:80
+msgid "Enable Rocket Charge"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Rocket.php:82
+msgid "Add 1.8% Rocket \"Send Money\" charge to the net price"
+msgstr ""
+
+#: includes/classes/CCD_Payment_Rocket.php:84
+msgid "If a product price is 1000 then customer have to pay ( 1000 + 18 ) = 1018 Here 18 is Rocket send money charge"
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/classes/class-ccd-gateway-base.php:69
+#, php-format
+msgid "Enable %s"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:80
+msgid "Please complete the payment, then fill up this form to confirm it."
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:86
+msgid "Shown on the thank you page and in the customer order emails."
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/classes/class-ccd-gateway-base.php:88
+#, php-format
+msgid "Thanks for paying with %s. We will verify your payment and update your order as soon as possible."
+msgstr ""
+
+#. translators: %s: payment method label
+#: includes/classes/class-ccd-gateway-base.php:98
+#, php-format
+msgid "Enable %s Charge"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:108
+msgid "Order status after checkout, while you verify the payment."
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:249
+msgid "Accept manual Upay (United Commercial Bank) payments. The customer sends money to your Upay number and submits their number and Transaction ID."
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:258
+msgid "Your 11-digit Upay mobile number shown to customers, e.g. 017XXXXXXXX."
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:263
+msgid "Upay Account Type"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:290
+msgid "Accept manual payments from the CellFin app (Islami Bank Bangladesh). The customer sends money to your account or CellFin number and submits the transaction reference."
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:297
+msgid "Receiving Account or Mobile Number"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:299
+msgid "Your Islami Bank account number or CellFin mobile number shown to customers."
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:303
+msgid "Receiving Number Type"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:329
+msgid "Accept manual bank transfers (BEFTN, NPSB or RTGS) to your bank account. The customer transfers the amount and submits the transfer reference."
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:336
+msgid "Bank Accounts"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:339
+msgid "Add one or more accounts. Account number is required; the routing number (9 digits) is needed for BEFTN/NPSB transfers from other banks. With more than one account, customers choose the account they paid into."
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:366
+msgid "Bank Name"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:367
+msgid "Account Name"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:368
+msgid "Account Number"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:369
+msgid "Branch"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:370
+msgid "Routing Number"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:405
+msgid "+ Add account"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:406
+msgid "Remove selected account(s)"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:479
+msgid "Show your Bangla QR code at checkout. Customers can scan and pay from any bank or mobile banking app (bKash, Nagad, Rocket, Upay, bank apps), then submit the transaction ID."
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:486
+msgid "Merchant Name"
+msgstr ""
+
+#: includes/classes/class-ccd-gateway-base.php:488
+msgid "The merchant name customers see in their app after scanning, so they can confirm they are paying you."
+msgstr ""
+
+#: assets/js/blocks/ccd-blocks.js:301
+msgid "Please fill in:"
+msgstr ""
+
+#: assets/js/blocks/ccd-blocks.js:305
+msgid "Please select the account you paid to."
+msgstr ""

@@ -15,8 +15,8 @@ class CCD_Payment_Bkash extends WC_Payment_Gateway
         $this->id                     = 'ccd_bkash';
         $this->title                  = $this->get_option('bkash_title', 'Payment With bKash');
         $this->description            = $this->get_option('bkash_description', 'Please fill up this form to confirm the payment');
-        $this->method_title           = esc_html("bKash Gateway", "ccd-payment-gateway-domain");
-        $this->method_description     = esc_html("Take Payments By Bkash. So that we can easily accept payments by Confirming Transaction ID and Customer Billing Number.", "ccd-payment-gateway-domain");
+        $this->method_title           = esc_html__("bKash Gateway", "codecarebd-bkash-nagad-rocket-payoneer-gateway");
+        $this->method_description     = esc_html__("Take Payments By Bkash. So that we can easily accept payments by Confirming Transaction ID and Customer Billing Number.", "codecarebd-bkash-nagad-rocket-payoneer-gateway");
 
         // Explicitly declare the properties here.
         $this->bkash_number           = $this->get_option('bkash_number');
@@ -40,59 +40,59 @@ class CCD_Payment_Bkash extends WC_Payment_Gateway
     {
         $this->form_fields = array(
             'enabled'     =>    array(
-                'title'        => esc_html('Enable/Disable', "ccd-payment-gateway-domain"),
+                'title'        => esc_html__('Enable/Disable', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'         => 'checkbox',
                 'default'    => 'yes'
             ),
             'bkash_title'     => array(
-                'title'     => esc_html('Title', "ccd-payment-gateway-domain"),
+                'title'     => esc_html__('Title', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'         => 'text',
-                'default'    => esc_html('Payment With bKash', "ccd-payment-gateway-domain")
+                'default'    => esc_html__('Payment With bKash', "codecarebd-bkash-nagad-rocket-payoneer-gateway")
             ),
             'bkash_description' => array(
-                'title'        => esc_html('Description', "ccd-payment-gateway-domain"),
+                'title'        => esc_html__('Description', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'         => 'textarea',
-                'default'    => esc_html('Please fill up this form to confirm the payment', "ccd-payment-gateway-domain"),
+                'default'    => esc_html__('Please fill up this form to confirm the payment', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'desc_tip'    => true
             ),
             'bkash_instructions' => array(
-                'title'           => esc_html('Thank you page message', "ccd-payment-gateway-domain"),
+                'title'           => esc_html__('Thank you page message', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'            => 'textarea',
-                'description'     => esc_html('Thank you page message that will be added to the thank you page and emails.', "ccd-payment-gateway-domain"),
-                'default'         => esc_html('Thanks for purchasing through bKash. We will check and give you update as soon as possible.', "ccd-payment-gateway-domain"),
+                'description'     => esc_html__('Thank you page message that will be added to the thank you page and emails.', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
+                'default'         => esc_html__('Thanks for purchasing through bKash. We will check and give you update as soon as possible.', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'desc_tip'        => true
             ),
             'bkash_number'    => array(
-                'title'            => esc_html('bKash Number', "ccd-payment-gateway-domain"),
-                'description'     => esc_html('Add a bKash mobile no which will be shown in checkout page', "ccd-payment-gateway-domain"),
+                'title'            => esc_html__('bKash Number', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
+                'description'     => esc_html__('Add a bKash mobile no which will be shown in checkout page', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'            => 'text',
                 'desc_tip'      => true
             ),
             'bkash_account_type'    => array(
-                'title'            => esc_html('Bkash Account Type', "ccd-payment-gateway-domain"),
+                'title'            => esc_html__('Bkash Account Type', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'            => 'select',
                 'class'           => 'wc-enhanced-select',
-                'description'     => esc_html('Select bKash account type', "ccd-payment-gateway-domain"),
+                'description'     => esc_html__('Select bKash account type', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'options'    => array(
-                    'Agent'        => esc_html('Agent', "ccd-payment-gateway-domain"),
-                    'Personal'    => esc_html('Personal', "ccd-payment-gateway-domain")
+                    'Agent'        => esc_html__('Agent', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
+                    'Personal'    => esc_html__('Personal', "codecarebd-bkash-nagad-rocket-payoneer-gateway")
                 ),
                 'desc_tip'      => true,
                 'default'    => 'Agent'
             ),
             'bkash_charge'     =>    array(
-                'title'            => esc_html__('Enable bKash Charge', "ccd-payment-gateway-domain"),
+                'title'            => esc_html__('Enable bKash Charge', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'             => 'checkbox',
-                'label'            => esc_html__('Add 1.85% bKash "Send Money" charge to the net price', "ccd-payment-gateway-domain"),
+                'label'            => esc_html__('Add 1.85% bKash "Send Money" charge to the net price', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'default'        => 'no',
-                'description'     => esc_html__('If a product price is 1000 then customer have to pay ( 1000 + 18.5 ) = 1018.5 Here 18.5 is bKash send money charge', "ccd-payment-gateway-domain"),
+                'description'     => esc_html__('If a product price is 1000 then customer have to pay ( 1000 + 18.5 ) = 1018.5 Here 18.5 is bKash send money charge', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'desc_tip'        => true
             ),
             'bkash_order_status' => array(
-                'title'       => esc_html('Order Status', "ccd-payment-gateway-domain"),
+                'title'       => esc_html__('Order Status', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'        => 'select',
                 'class'       => 'wc-enhanced-select',
-                'description' => esc_html('Choose whether status you wish after checkout.', "ccd-payment-gateway-domain"),
+                'description' => esc_html__('Choose whether status you wish after checkout.', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'default'     => 'wc-on-hold',
                 'desc_tip'    => true,
                 'options'     => wc_get_order_statuses()
@@ -108,7 +108,7 @@ class CCD_Payment_Bkash extends WC_Payment_Gateway
 
         ccd_render_advance_notice();
 
-        echo wpautop(wptexturize(esc_html__($this->description, "ccd-payment-gateway-domain")));
+        echo wpautop(wptexturize(esc_html($this->description)));
         ccd_render_account_box($this->id);
 
 ?>
@@ -116,11 +116,11 @@ class CCD_Payment_Bkash extends WC_Payment_Gateway
         <div class="payment_box_ccd_child">
             <table>
                 <tr>
-                    <td><label for="bkash_number"><?php esc_html_e('bKash Number', "ccd-payment-gateway-domain"); ?></label></td>
+                    <td><label for="bkash_number"><?php esc_html_e('bKash Number', "codecarebd-bkash-nagad-rocket-payoneer-gateway"); ?></label></td>
                     <td><input class="widefat" type="text" name="bkash_number" id="bkash_number" placeholder="Ex. 018XXXXXXXX"></td>
                 </tr>
                 <tr>
-                    <td><label for="bkash_transaction_id"><?php esc_html_e('bKash Transaction ID', "ccd-payment-gateway-domain"); ?></label></td>
+                    <td><label for="bkash_transaction_id"><?php esc_html_e('bKash Transaction ID', "codecarebd-bkash-nagad-rocket-payoneer-gateway"); ?></label></td>
                     <td><input class="widefat" type="text" name="bkash_transaction_id" id="bkash_transaction_id" placeholder="Ex. 8N7A6D5EE7M"></td>
                 </tr>
             </table>

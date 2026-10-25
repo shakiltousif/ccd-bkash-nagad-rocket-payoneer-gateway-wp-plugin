@@ -14,8 +14,8 @@ class CCD_Payment_Nagad extends WC_Payment_Gateway
         $this->id                     = 'ccd_nagad';
         $this->title                 = $this->get_option('ccd_nagad_title', 'Payment With Nagad');
         $this->description             = $this->get_option('ccd_nagad_description', 'Please fill up this form to confirm the payment');
-        $this->method_title         = esc_html("Nagad Gateway", "ccd-payment-gateway-domain");
-        $this->method_description     = esc_html("Take Payments By Nagad. So that we can easily accept payments by Confirming Transaction ID and Customer Billing Number.", "ccd-payment-gateway-domain");
+        $this->method_title         = esc_html__("Nagad Gateway", "codecarebd-bkash-nagad-rocket-payoneer-gateway");
+        $this->method_description     = esc_html__("Take Payments By Nagad. So that we can easily accept payments by Confirming Transaction ID and Customer Billing Number.", "codecarebd-bkash-nagad-rocket-payoneer-gateway");
         $this->ccd_nagad_number = $this->get_option('ccd_nagad_number');
         $this->ccd_nagad_account_type     = $this->get_option('ccd_nagad_account_type');
         $this->ccd_nagad_charge = $this->get_option('ccd_nagad_charge');
@@ -37,59 +37,59 @@ class CCD_Payment_Nagad extends WC_Payment_Gateway
     {
         $this->form_fields = array(
             'enabled'     =>    array(
-                'title'        => esc_html('Enable/Disable', "ccd-payment-gateway-domain"),
+                'title'        => esc_html__('Enable/Disable', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'         => 'checkbox',
                 'default'    => 'yes'
             ),
             'ccd_nagad_title'     => array(
-                'title'     => esc_html('Title', "ccd-payment-gateway-domain"),
+                'title'     => esc_html__('Title', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'         => 'text',
-                'default'    => esc_html('Payment With Nagad', "ccd-payment-gateway-domain")
+                'default'    => esc_html__('Payment With Nagad', "codecarebd-bkash-nagad-rocket-payoneer-gateway")
             ),
             'ccd_nagad_description' => array(
-                'title'        => esc_html('Description', "ccd-payment-gateway-domain"),
+                'title'        => esc_html__('Description', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'         => 'textarea',
-                'default'    => esc_html('Please fill up this form to confirm the payment', "ccd-payment-gateway-domain"),
+                'default'    => esc_html__('Please fill up this form to confirm the payment', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'desc_tip'    => true
             ),
             'ccd_nagad_instructions' => array(
-                'title'           => esc_html('Thank you page message', "ccd-payment-gateway-domain"),
+                'title'           => esc_html__('Thank you page message', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'            => 'textarea',
-                'description'     => esc_html('Thank you page message that will be added to the thank you page and emails.', "ccd-payment-gateway-domain"),
-                'default'         => esc_html('Thanks for purchasing through Nagad. We will check and give you update as soon as possible.', "ccd-payment-gateway-domain"),
+                'description'     => esc_html__('Thank you page message that will be added to the thank you page and emails.', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
+                'default'         => esc_html__('Thanks for purchasing through Nagad. We will check and give you update as soon as possible.', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'desc_tip'        => true
             ),
             'ccd_nagad_number'    => array(
-                'title'            => esc_html('Nagad Number', "ccd-payment-gateway-domain"),
-                'description'     => esc_html('Add a Nagad mobile no which will be shown in checkout page', "ccd-payment-gateway-domain"),
+                'title'            => esc_html__('Nagad Number', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
+                'description'     => esc_html__('Add a Nagad mobile no which will be shown in checkout page', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'            => 'text',
                 'desc_tip'      => true
             ),
             'ccd_nagad_account_type'    => array(
-                'title'            => esc_html('Nagad Account Type', "ccd-payment-gateway-domain"),
+                'title'            => esc_html__('Nagad Account Type', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'            => 'select',
                 'class'           => 'wc-enhanced-select',
-                'description'     => esc_html('Select Nagad account type', "ccd-payment-gateway-domain"),
+                'description'     => esc_html__('Select Nagad account type', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'options'    => array(
-                    'Agent'        => esc_html('Agent', "ccd-payment-gateway-domain"),
-                    'Personal'    => esc_html('Personal', "ccd-payment-gateway-domain")
+                    'Agent'        => esc_html__('Agent', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
+                    'Personal'    => esc_html__('Personal', "codecarebd-bkash-nagad-rocket-payoneer-gateway")
                 ),
                 'desc_tip'      => true,
                 'default'        => 'Agent'
             ),
             'ccd_nagad_charge'     =>    array(
-                'title'            => esc_html__('Enable Nagad Charge', "ccd-payment-gateway-domain"),
+                'title'            => esc_html__('Enable Nagad Charge', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'             => 'checkbox',
-                'label'            => esc_html__('Add 1.45% Nagad "Send Money" charge to the net price', "ccd-payment-gateway-domain"),
+                'label'            => esc_html__('Add 1.45% Nagad "Send Money" charge to the net price', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'default'        => 'no',
-                'description'     => esc_html__('If a product price is 1000 then customer have to pay ( 1000 + 14.5 ) = 1014.5 Here 14.5 is Nagad send money charge', "ccd-payment-gateway-domain"),
+                'description'     => esc_html__('If a product price is 1000 then customer have to pay ( 1000 + 14.5 ) = 1014.5 Here 14.5 is Nagad send money charge', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'desc_tip'        => true
             ),
             'cdd_nagad_order_status' => array(
-                'title'       => esc_html('Order Status', "ccd-payment-gateway-domain"),
+                'title'       => esc_html__('Order Status', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'type'        => 'select',
                 'class'       => 'wc-enhanced-select',
-                'description' => esc_html('Choose whether status you wish after checkout.', "ccd-payment-gateway-domain"),
+                'description' => esc_html__('Choose whether status you wish after checkout.', "codecarebd-bkash-nagad-rocket-payoneer-gateway"),
                 'default'     => 'wc-on-hold',
                 'desc_tip'    => true,
                 'options'     => wc_get_order_statuses()
@@ -105,17 +105,17 @@ class CCD_Payment_Nagad extends WC_Payment_Gateway
 
         ccd_render_advance_notice();
 
-        echo wpautop(wptexturize(esc_html__($this->description, "ccd-payment-gateway-domain")));
+        echo wpautop(wptexturize(esc_html($this->description)));
         ccd_render_account_box($this->id);
 ?>
         <div class="payment_box_ccd_child">
             <table>
                 <tr>
-                    <td><label for="ccd_nagad_number"><?php esc_html_e('Nagad Number', "ccd-payment-gateway-domain"); ?></label></td>
+                    <td><label for="ccd_nagad_number"><?php esc_html_e('Nagad Number', "codecarebd-bkash-nagad-rocket-payoneer-gateway"); ?></label></td>
                     <td><input class="widefat" type="text" name="ccd_nagad_number" id="ccd_nagad_number" placeholder="Ex. 018XXXXXXXX"></td>
                 </tr>
                 <tr>
-                    <td><label for="ccd_nagad_transaction_id"><?php esc_html_e('Nagad Transaction ID', "ccd-payment-gateway-domain"); ?></label></td>
+                    <td><label for="ccd_nagad_transaction_id"><?php esc_html_e('Nagad Transaction ID', "codecarebd-bkash-nagad-rocket-payoneer-gateway"); ?></label></td>
                     <td><input class="widefat" type="text" name="ccd_nagad_transaction_id" id="ccd_nagad_transaction_id" placeholder="Ex. 8N7A6D5EE7M"></td>
                 </tr>
             </table>
