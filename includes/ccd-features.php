@@ -509,7 +509,7 @@ function ccd_describe_account($gateway_id, $account)
         'title'   => $title,
         'meta'    => trim($type . ' · ' . $account['number'], ' ·'),
         'details' => array(array('label' => $line, 'value' => $account['number'], 'copy' => true)),
-        'paid_to' => trim(('' !== $account['label'] ? $account['label'] . ' - ' : '') . $label . ' ' . $account['type'] . ' ' . $account['number']),
+        'paid_to' => trim(preg_replace('/\s+/', ' ', ('' !== $account['label'] ? $account['label'] . ' - ' : '') . $label . ' ' . $account['type'] . ' ' . $account['number'])),
     );
 }
 

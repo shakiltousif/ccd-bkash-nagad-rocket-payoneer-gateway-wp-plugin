@@ -3,7 +3,7 @@ Contributors: devshakil, codecarebd, shakvaro
 Requires at least: 6.3
 Requires PHP: 7.3
 Tested up to: 7.1
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 WC requires at least: 6.3
 WC tested up to: 11.2
 License: GPLv2 or later
@@ -38,6 +38,9 @@ The customer pays you from their own app (send money, cash out, Bangla QR scan o
 
 = Key features =
 
+* **Verify payments from your email** - the admin "New order" email shows the payment details with **Payment received / Not received** buttons. Each opens a confirmation page, so email link scanners can never approve an order. Links are signed, work once and expire after 7 days.
+* **Needs verification** filter and a **payment screenshot** column in the WooCommerce Orders list.
+* **Payment Reports** - totals per payment method and per receiving number or bank account, a transaction list and **CSV export**.
 * **Duplicate Transaction ID protection** for every method (classic and block checkout).
 * **Payment screenshot / PDF upload** - off, optional or required per method, at checkout or later from the thank-you page and My Account. Files are stored privately on your server; only shop managers can view them.
 * **Send money charge** per method - percentage (e.g. bKash 1.85%) or fixed amount, updated live as the customer switches method.
@@ -131,6 +134,14 @@ Yes. Open the method under WooCommerce > Settings > Payments and use "+ Add numb
 
 Yes, when Payment Screenshot is set to Optional or Required for that method. The thank-you page and My Account > Orders > View show an upload box while the order is pending, on hold or "Advance Received" (up to 5 uploads per order). A new upload replaces the previous file and adds an order note.
 
+= How do the "Payment received / Not received" email buttons work? =
+
+They are added to the admin "New order" email for orders paid with this plugin. Clicking one opens a page that shows the payment details and asks you to confirm; nothing changes until you press Confirm. "Payment received" marks the order paid (processing), "Not received" cancels it and restores stock. Links are signed, can be used once and expire after 7 days. Anyone who has the email can use them, so keep your admin email private, or turn the buttons off in WooCommerce > Settings > Emails > New order.
+
+= Where are the payment reports? =
+
+WooCommerce > Payment Reports. Choose a date range, payment method and status to see totals per method and per receiving number or bank account, plus each transaction. "Export CSV" downloads the list (opens correctly in Excel, including Bangla names).
+
 = Is the plugin available in Bangla? =
 
 Yes. A full Bangla (bn_BD) translation is included. Set Settings > General > Site Language to বাংলা and the checkout, emails and settings appear in Bangla.
@@ -187,8 +198,18 @@ Data is sent over HTTPS to https://track.shakvaro.cloud and is handled as descri
 8. Admin order screen: payment number, Transaction ID and the customer's payment screenshot.
 9. Several bKash numbers: customers search and choose the number they sent money to.
 10. Upload the payment screenshot after ordering, from the thank-you page or My Account.
+11. Orders list: "Needs payment verification" filter and payment screenshot thumbnails.
+12. Payment Reports: totals per method and receiving number, transactions and CSV export.
+13. Verifying a payment from the email: confirmation page.
 
 == Changelog ==
+
+= 1.7.0 - 2026-12-01 =
+* NEW: The admin "New order" email shows the payment details and "Payment received / Not received" buttons. Buttons open a confirmation page (safe from email link scanners); links are signed, single-use and expire after 7 days. Can be turned off in the New order email settings.
+* NEW: The shop is emailed when a customer uploads a payment screenshot after ordering, with the same buttons.
+* NEW: "Needs payment verification" filter and a payment screenshot column in the Orders list (HPOS and legacy storage).
+* NEW: WooCommerce > Payment Reports: totals per payment method and per receiving number / bank account, a transaction list and CSV export (protected against spreadsheet formula injection).
+* IMPROVED: Approving an "Advance Received" order from the email marks it paid.
 
 = 1.6.0 - 2026-11-15 =
 * NEW: Multiple receiving numbers for bKash, Nagad, Rocket, Upay and CellFin. With several numbers, customers search and pick the number they sent money to (5 at a time, "Show more"); the order shows it under "Paid To".
@@ -292,6 +313,9 @@ Data is sent over HTTPS to https://track.shakvaro.cloud and is handled as descri
 * First release.
 
 == Upgrade Notice ==
+
+= 1.7.0 =
+Verify payments from the New order email with one click, find orders that need verification, and see payment reports with CSV export.
 
 = 1.6.0 =
 Adds multiple numbers per wallet, payment screenshot upload after ordering and a full Bangla translation. Existing settings are kept.

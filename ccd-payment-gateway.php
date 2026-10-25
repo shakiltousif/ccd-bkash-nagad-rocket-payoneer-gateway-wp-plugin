@@ -5,7 +5,7 @@
  * Plugin URI: https://wordpress.org/plugins/codecarebd-bkash-nagad-rocket-payoneer-gateway
  * Description: Manual payment gateways for WooCommerce: bKash, Nagad, Rocket, Upay, CellFin, Bangla QR, bank transfer and Payoneer. Block checkout and HPOS ready.
  * Author: Shakil Ahamed
- * Version: 1.6.0
+ * Version: 1.7.0
  * Requires at least: 6.3
  * Requires PHP: 7.3
  * Tested up to: 7.1
@@ -23,7 +23,7 @@
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 // Define plugin constants
-define('CCD_PAYMENT_GATEWAY_VERSION', '1.6.0');
+define('CCD_PAYMENT_GATEWAY_VERSION', '1.7.0');
 define('CCD_PAYMENT_GATEWAY_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CCD_PAYMENT_GATEWAY_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -125,6 +125,8 @@ if (is_plugin_active('woocommerce/woocommerce.php')) {
     // Shared features: charge, duplicate transaction ID check, account box, review notice.
     require_once __DIR__ . '/includes/ccd-features.php';
     require_once __DIR__ . '/includes/ccd-payment-proof.php';
+    require_once __DIR__ . '/includes/ccd-verify.php';
+    require_once __DIR__ . '/includes/ccd-reports.php';
 } else {
 
     //notice if Woocommerce isn't installed properly

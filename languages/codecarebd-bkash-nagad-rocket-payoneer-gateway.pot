@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: CodeCareBD - bKash, Nagad, Rocket, Payoneer Gateway 1.6.0\n"
+"Project-Id-Version: CodeCareBD - bKash, Nagad, Rocket, Payoneer Gateway 1.7.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/codecarebd-bkash-nagad-rocket-payoneer-gateway\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-25T07:42:53+00:00\n"
+"POT-Creation-Date: 2026-10-25T08:05:25+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: codecarebd-bkash-nagad-rocket-payoneer-gateway\n"
@@ -39,217 +39,224 @@ msgstr ""
 msgid "https://shakilahamed.com"
 msgstr ""
 
-#: ccd-payment-gateway.php:410
+#: ccd-payment-gateway.php:412
+#: includes/ccd-reports.php:219
+#: includes/ccd-reports.php:243
+#: includes/ccd-reports.php:321
+#: includes/ccd-verify.php:115
 msgid "Paid To"
 msgstr ""
 
-#: ccd-payment-gateway.php:416
+#: ccd-payment-gateway.php:418
 #: includes/ccd-features.php:298
+#: includes/ccd-verify.php:117
 msgid "Payment Screenshot"
 msgstr ""
 
-#: ccd-payment-gateway.php:417
+#: ccd-payment-gateway.php:419
 msgid "View file"
 msgstr ""
 
-#: ccd-payment-gateway.php:422
-#: ccd-payment-gateway.php:490
+#: ccd-payment-gateway.php:424
+#: ccd-payment-gateway.php:492
 msgid "Advance Payment Information"
 msgstr ""
 
-#: ccd-payment-gateway.php:425
-#: ccd-payment-gateway.php:493
+#: ccd-payment-gateway.php:427
+#: ccd-payment-gateway.php:495
 msgid "Original Order Total"
 msgstr ""
 
-#: ccd-payment-gateway.php:429
-#: ccd-payment-gateway.php:497
+#: ccd-payment-gateway.php:431
+#: ccd-payment-gateway.php:499
 msgid "Advance Amount Paid"
 msgstr ""
 
-#: ccd-payment-gateway.php:433
-#: ccd-payment-gateway.php:501
+#: ccd-payment-gateway.php:435
+#: ccd-payment-gateway.php:503
 msgid "Remaining Amount"
 msgstr ""
 
-#: ccd-payment-gateway.php:484
+#: ccd-payment-gateway.php:486
 msgid "Payment Screenshot:"
 msgstr ""
 
-#: ccd-payment-gateway.php:485
+#: ccd-payment-gateway.php:487
 msgid "Received"
 msgstr ""
 
-#: ccd-payment-gateway.php:522
-#: ccd-payment-gateway.php:543
+#: ccd-payment-gateway.php:524
+#: ccd-payment-gateway.php:545
 msgid "Account No."
 msgstr ""
 
-#: ccd-payment-gateway.php:523
-#: ccd-payment-gateway.php:544
+#: ccd-payment-gateway.php:525
+#: ccd-payment-gateway.php:546
 #: includes/ccd-features.php:101
 #: includes/ccd-features.php:165
+#: includes/ccd-reports.php:242
+#: includes/ccd-reports.php:320
 #: includes/classes/CCD_Payment_Payoneer.php:96
 msgid "Transaction ID"
 msgstr ""
 
-#: ccd-payment-gateway.php:723
+#: ccd-payment-gateway.php:725
 msgid "Settings"
 msgstr ""
 
-#: ccd-payment-gateway.php:724
-#: ccd-payment-gateway.php:789
+#: ccd-payment-gateway.php:726
+#: ccd-payment-gateway.php:791
 msgid "Advance Payment"
 msgstr ""
 
-#: ccd-payment-gateway.php:725
+#: ccd-payment-gateway.php:727
 msgid "Support"
 msgstr ""
 
-#: ccd-payment-gateway.php:735
-#: ccd-payment-gateway.php:751
-#: ccd-payment-gateway.php:774
+#: ccd-payment-gateway.php:737
+#: ccd-payment-gateway.php:753
+#: ccd-payment-gateway.php:776
 msgid "Advance Received"
 msgstr ""
 
 #. translators: %s: number of orders
-#: ccd-payment-gateway.php:741
-#: ccd-payment-gateway.php:757
+#: ccd-payment-gateway.php:743
+#: ccd-payment-gateway.php:759
 #, php-format
 msgid "Advance Received <span class=\"count\">(%s)</span>"
 msgid_plural "Advance Received <span class=\"count\">(%s)</span>"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ccd-payment-gateway.php:788
-#: ccd-payment-gateway.php:879
+#: ccd-payment-gateway.php:790
+#: ccd-payment-gateway.php:881
 msgid "Advance Payment Settings"
 msgstr ""
 
-#: ccd-payment-gateway.php:851
+#: ccd-payment-gateway.php:853
 msgid "No \"Inside Dhaka\" area was selected, so Dhaka (BD-13) was used."
 msgstr ""
 
-#: ccd-payment-gateway.php:854
+#: ccd-payment-gateway.php:856
 msgid "Both zone amounts are 0, so no advance payment will be asked. Enter the inside and outside Dhaka amounts."
 msgstr ""
 
-#: ccd-payment-gateway.php:863
+#: ccd-payment-gateway.php:865
 msgid "Settings saved successfully!"
 msgstr ""
 
-#: ccd-payment-gateway.php:885
+#: ccd-payment-gateway.php:887
 msgid "Enable Advance Payment"
 msgstr ""
 
-#: ccd-payment-gateway.php:890
+#: ccd-payment-gateway.php:892
 msgid "When enabled, customers paying with these gateways pay only an advance now (the delivery charge, or a fixed amount for inside / outside Dhaka) and the rest later. The order is set to \"Advance Received\"."
 msgstr ""
 
-#: ccd-payment-gateway.php:896
+#: ccd-payment-gateway.php:898
 msgid "Advance Amount"
 msgstr ""
 
-#: ccd-payment-gateway.php:900
+#: ccd-payment-gateway.php:902
 msgid "Delivery (shipping) charge of the order"
 msgstr ""
 
-#: ccd-payment-gateway.php:901
+#: ccd-payment-gateway.php:903
 msgid "Fixed amount: inside Dhaka / outside Dhaka"
 msgstr ""
 
-#: ccd-payment-gateway.php:903
+#: ccd-payment-gateway.php:905
 msgid "\"Delivery charge\" uses the shipping cost calculated at checkout. \"Fixed amount\" asks a set advance depending on the delivery district."
 msgstr ""
 
-#: ccd-payment-gateway.php:907
+#: ccd-payment-gateway.php:909
 msgid "Inside Dhaka Areas"
 msgstr ""
 
-#: ccd-payment-gateway.php:914
+#: ccd-payment-gateway.php:916
 msgid "Delivery districts charged the \"inside Dhaka\" amount. Default: Dhaka. Every other district (and other countries) use the outside amount."
 msgstr ""
 
-#: ccd-payment-gateway.php:918
+#: ccd-payment-gateway.php:920
 msgid "Inside Dhaka Amount"
 msgstr ""
 
-#: ccd-payment-gateway.php:922
+#: ccd-payment-gateway.php:924
 msgid "Outside Dhaka Amount"
 msgstr ""
 
-#: ccd-payment-gateway.php:926
+#: ccd-payment-gateway.php:928
 msgid "Minimum Order Total"
 msgstr ""
 
-#: ccd-payment-gateway.php:929
+#: ccd-payment-gateway.php:931
 msgid "Only ask for an advance when the order total is at least this amount. Leave empty or 0 to always ask."
 msgstr ""
 
-#: ccd-payment-gateway.php:934
+#: ccd-payment-gateway.php:936
 msgid "Order Status Label"
 msgstr ""
 
-#: ccd-payment-gateway.php:939
+#: ccd-payment-gateway.php:941
 msgid "Customize the label for the advance payment order status."
 msgstr ""
 
-#: ccd-payment-gateway.php:945
+#: ccd-payment-gateway.php:947
 msgid "Advance Payment Title"
 msgstr ""
 
-#: ccd-payment-gateway.php:948
-#: ccd-payment-gateway.php:1171
+#: ccd-payment-gateway.php:950
+#: ccd-payment-gateway.php:1173
 msgid "Advance Payment Information:"
 msgstr ""
 
-#: ccd-payment-gateway.php:950
+#: ccd-payment-gateway.php:952
 msgid "Customize the title shown in the advance payment notice box. Leave empty to use default."
 msgstr ""
 
-#: ccd-payment-gateway.php:956
+#: ccd-payment-gateway.php:958
 msgid "Advance Payment Text"
 msgstr ""
 
-#: ccd-payment-gateway.php:959
-#: ccd-payment-gateway.php:1178
+#: ccd-payment-gateway.php:961
+#: ccd-payment-gateway.php:1180
 msgid "You will pay only the delivery charge as advance payment:"
 msgstr ""
 
-#: ccd-payment-gateway.php:961
+#: ccd-payment-gateway.php:963
 msgid "Customize the text explaining the advance payment amount. Leave empty to use default. Use {amount} placeholder to show the advance amount dynamically."
 msgstr ""
 
-#: ccd-payment-gateway.php:967
+#: ccd-payment-gateway.php:969
 msgid "Remaining Payment Text"
 msgstr ""
 
-#: ccd-payment-gateway.php:970
-#: ccd-payment-gateway.php:1183
+#: ccd-payment-gateway.php:972
+#: ccd-payment-gateway.php:1185
 msgid "Remaining amount to be paid later:"
 msgstr ""
 
-#: ccd-payment-gateway.php:972
+#: ccd-payment-gateway.php:974
 msgid "Customize the text explaining the remaining payment amount. Leave empty to use default. Use {amount} placeholder to show the remaining amount dynamically."
 msgstr ""
 
-#: ccd-payment-gateway.php:978
+#: ccd-payment-gateway.php:980
 msgid "Save Settings"
 msgstr ""
 
 #. translators: %s: payment method label
-#: ccd-payment-gateway.php:1092
+#: ccd-payment-gateway.php:1094
 #, php-format
 msgid "Advance payment received via %s. Remaining amount: "
 msgstr ""
 
 #. translators: %s: payment method label
-#: ccd-payment-gateway.php:1117
+#: ccd-payment-gateway.php:1119
 #, php-format
 msgid "Checkout with %s payment. "
 msgstr ""
 
-#: ccd-payment-gateway.php:1177
+#: ccd-payment-gateway.php:1179
 msgid "Pay this advance now to confirm your order:"
 msgstr ""
 
@@ -840,6 +847,7 @@ msgid "I already did"
 msgstr ""
 
 #: includes/ccd-features.php:1717
+#: includes/ccd-reports.php:304
 msgid "Sorry, you are not allowed to do that."
 msgstr ""
 
@@ -953,6 +961,7 @@ msgid "Payment screenshot or PDF (optional)"
 msgstr ""
 
 #: includes/ccd-payment-proof.php:535
+#: includes/ccd-verify.php:476
 msgid "Payment screenshot"
 msgstr ""
 
@@ -986,6 +995,287 @@ msgstr ""
 
 #: includes/ccd-payment-proof.php:602
 msgid "Customer uploaded a payment screenshot after checkout."
+msgstr ""
+
+#: includes/ccd-reports.php:20
+#: includes/ccd-reports.php:21
+#: includes/ccd-reports.php:187
+msgid "Payment Reports"
+msgstr ""
+
+#: includes/ccd-reports.php:152
+msgid "(not recorded)"
+msgstr ""
+
+#: includes/ccd-reports.php:171
+msgid "Sorry, you are not allowed to view this page."
+msgstr ""
+
+#: includes/ccd-reports.php:190
+msgid "From"
+msgstr ""
+
+#: includes/ccd-reports.php:191
+msgid "To"
+msgstr ""
+
+#: includes/ccd-reports.php:193
+msgid "All payment methods"
+msgstr ""
+
+#: includes/ccd-reports.php:199
+msgid "All (except cancelled, failed, refunded)"
+msgstr ""
+
+#: includes/ccd-reports.php:200
+#: includes/ccd-verify.php:373
+msgid "Needs payment verification"
+msgstr ""
+
+#: includes/ccd-reports.php:201
+msgid "Paid (processing / completed)"
+msgstr ""
+
+#: includes/ccd-reports.php:203
+msgid "Filter"
+msgstr ""
+
+#: includes/ccd-reports.php:204
+msgid "Export CSV"
+msgstr ""
+
+#. translators: 1: number of orders, 2: total amount
+#: includes/ccd-reports.php:210
+#, php-format
+msgid "%1$s orders, %2$s in total."
+msgstr ""
+
+#: includes/ccd-reports.php:215
+msgid "By payment method"
+msgstr ""
+
+#: includes/ccd-reports.php:215
+msgid "By receiving number / account"
+msgstr ""
+
+#: includes/ccd-reports.php:219
+#: includes/ccd-reports.php:240
+#: includes/ccd-reports.php:318
+#: includes/ccd-verify.php:105
+msgid "Payment method"
+msgstr ""
+
+#: includes/ccd-reports.php:219
+msgid "Orders"
+msgstr ""
+
+#: includes/ccd-reports.php:219
+#: includes/ccd-reports.php:244
+#: includes/ccd-reports.php:322
+msgid "Amount"
+msgstr ""
+
+#: includes/ccd-reports.php:223
+#: includes/ccd-reports.php:251
+msgid "No orders in this period."
+msgstr ""
+
+#: includes/ccd-reports.php:234
+msgid "Transactions"
+msgstr ""
+
+#: includes/ccd-reports.php:238
+#: includes/ccd-reports.php:315
+msgid "Order"
+msgstr ""
+
+#: includes/ccd-reports.php:239
+#: includes/ccd-reports.php:316
+msgid "Date"
+msgstr ""
+
+#: includes/ccd-reports.php:241
+#: includes/ccd-reports.php:319
+msgid "Sender"
+msgstr ""
+
+#: includes/ccd-reports.php:245
+#: includes/ccd-reports.php:324
+msgid "Status"
+msgstr ""
+
+#: includes/ccd-reports.php:246
+#: includes/ccd-reports.php:325
+#: includes/ccd-verify.php:493
+#: includes/ccd-verify.php:497
+msgid "Screenshot"
+msgstr ""
+
+#: includes/ccd-reports.php:263
+#: includes/ccd-reports.php:332
+msgid "Yes"
+msgstr ""
+
+#: includes/ccd-reports.php:317
+msgid "Customer"
+msgstr ""
+
+#: includes/ccd-reports.php:323
+msgid "Currency"
+msgstr ""
+
+#: includes/ccd-verify.php:118
+msgid "Attached (view it on the order screen)"
+msgstr ""
+
+#: includes/ccd-verify.php:119
+msgid "Not uploaded"
+msgstr ""
+
+#: includes/ccd-verify.php:120
+msgid "Amount to receive"
+msgstr ""
+
+#: includes/ccd-verify.php:137
+#: includes/ccd-verify.php:148
+msgid "Payment to verify"
+msgstr ""
+
+#: includes/ccd-verify.php:142
+msgid "Payment received:"
+msgstr ""
+
+#: includes/ccd-verify.php:143
+msgid "Payment not received:"
+msgstr ""
+
+#: includes/ccd-verify.php:155
+msgid "After checking your account:"
+msgstr ""
+
+#: includes/ccd-verify.php:157
+msgid "Payment received"
+msgstr ""
+
+#: includes/ccd-verify.php:158
+msgid "Not received"
+msgstr ""
+
+#: includes/ccd-verify.php:159
+msgid "Each button opens a confirmation page. Links work once and expire after 7 days."
+msgstr ""
+
+#: includes/ccd-verify.php:174
+msgid "CodeCareBD payment verification"
+msgstr ""
+
+#: includes/ccd-verify.php:176
+msgid "Add payment details and \"Payment received / Not received\" buttons for bKash, Nagad, Rocket, Upay, CellFin, Bangla QR, bank transfer and Payoneer orders"
+msgstr ""
+
+#: includes/ccd-verify.php:177
+msgid "Buttons open a confirmation page; nothing changes until you confirm. Anyone with the email can use the links, so keep this email private."
+msgstr ""
+
+#. translators: %s: order number
+#: includes/ccd-verify.php:223
+#, php-format
+msgid "Payment screenshot received for order #%s"
+msgstr ""
+
+#. translators: 1: customer name, 2: order number
+#: includes/ccd-verify.php:226
+#, php-format
+msgid "%1$s uploaded a payment screenshot for order #%2$s."
+msgstr ""
+
+#: includes/ccd-verify.php:227
+msgid "The customer"
+msgstr ""
+
+#: includes/ccd-verify.php:231
+msgid "Open the order to view the screenshot"
+msgstr ""
+
+#. translators: 1: site name, 2: order number
+#: includes/ccd-verify.php:234
+#, php-format
+msgid "[%1$s] Payment screenshot for order #%2$s"
+msgstr ""
+
+#: includes/ccd-verify.php:267
+msgid "This link is not valid."
+msgstr ""
+
+#: includes/ccd-verify.php:270
+msgid "This link has expired. Please verify the payment from the order screen."
+msgstr ""
+
+#: includes/ccd-verify.php:273
+msgid "This payment was already marked from an email link."
+msgstr ""
+
+#. translators: %s: order status
+#: includes/ccd-verify.php:277
+#, php-format
+msgid "This order is already \"%s\", so it was not changed."
+msgstr ""
+
+#: includes/ccd-verify.php:316
+#: includes/ccd-verify.php:358
+msgid "Open the order"
+msgstr ""
+
+#. translators: %s: order number
+#: includes/ccd-verify.php:323
+#, php-format
+msgid "Order #%s"
+msgstr ""
+
+#: includes/ccd-verify.php:331
+msgid "Mark this payment as received? The order moves to processing."
+msgstr ""
+
+#: includes/ccd-verify.php:332
+msgid "Mark this payment as NOT received? The order is cancelled and stock is restored."
+msgstr ""
+
+#: includes/ccd-verify.php:338
+msgid "Confirm: payment received"
+msgstr ""
+
+#: includes/ccd-verify.php:338
+msgid "Confirm: not received"
+msgstr ""
+
+#: includes/ccd-verify.php:346
+msgid "Payment marked as received from the email verification link."
+msgstr ""
+
+#: includes/ccd-verify.php:348
+msgid "Done. The payment is marked as received."
+msgstr ""
+
+#: includes/ccd-verify.php:350
+msgid "Payment marked as not received from the email verification link."
+msgstr ""
+
+#: includes/ccd-verify.php:351
+msgid "Done. The order is cancelled."
+msgstr ""
+
+#. translators: %s: order status
+#: includes/ccd-verify.php:357
+#, php-format
+msgid "Order status: %s"
+msgstr ""
+
+#: includes/ccd-verify.php:372
+msgid "All payments"
+msgstr ""
+
+#: includes/ccd-verify.php:476
+msgid "View payment screenshot"
 msgstr ""
 
 #: includes/classes/CCD_Payment_Bkash.php:18
