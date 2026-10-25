@@ -1,0 +1,100 @@
+# Publishes a prepared release branch to WordPress.org SVN on a set date.
+#
+# - Scheduled run: fires every 1 November 04:00 UTC (10:00 Bangladesh time),
+#   but only publishes when today's UTC date equals RELEASE_DATE.
+# - Manual run (Actions tab -> Run workflow): dry run by default, which checks
+#   everything and builds the SVN commit without sending it.
+# - Never publishes twice: skips when tags/<version> already exists on WordPress.org.
+#
+# To cancel the scheduled release: disable this workflow (Actions tab) or delete this file.
+# To reschedule: change RELEASE_DATE and the cron line below.
+#
+# Requires repository secrets SVN_USERNAME and SVN_PASSWORD. The SVN password is not your
+# WordPress.org login password: generate it at https://profiles.wordpress.org/me/profile/edit/
+# -> Account & Security -> SVN credentials -> Generate Password.
+
+name: Scheduled WordPress.org release
+
+on:
+  schedule:
+    - cron: '0 4 1 11 *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (build everything, do not commit to WordPress.org)'
+        type: boolean
+        default: true
+
+env:
+  SLUG: codecarebd-bkash-nagad-rocket-payoneer-gateway
+  RELEASE_VERSION: '1.5.0'
+  RELEASE_BRANCH: 'release/1.5.0'
+  RELEASE_DATE: '2026-11-01'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wporg-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide whether to run
+        id: guard
+        run: |
+          set -euo pipefail
+          today="$(date -u +%F)"
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$today" != "$RELEASE_DATE" ]; then
+            echo "Today is $today, release date is $RELEASE_DATE. Nothing to do."
+            echo "run=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          code="$(curl -s -o /dev/null -w '%{http_code}' "https://plugins.svn.wordpress.org/$SLUG/tags/$RELEASE_VERSION/")"
+          if [ "$code" = "200" ]; then
+            echo "Version $RELEASE_VERSION is already on WordPress.org. Nothing to do."
+            echo "run=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+
+      - name: Check out release branch
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_BRANCH }}
+          fetch-depth: 0
+
+      - name: Pre-flight checks
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          grep -q "^ \* Version: $RELEASE_VERSION$" ccd-payment-gateway.php || { echo "::error::Plugin header Version is not $RELEASE_VERSION"; exit 1; }
+          grep -q "define('CCD_PAYMENT_GATEWAY_VERSION', '$RELEASE_VERSION');" ccd-payment-gateway.php || { echo "::error::CCD_PAYMENT_GATEWAY_VERSION is not $RELEASE_VERSION"; exit 1; }
+          grep -q "^Stable tag: $RELEASE_VERSION$" readme.txt || { echo "::error::readme.txt Stable tag is not $RELEASE_VERSION"; exit 1; }
+          grep -q "^= $RELEASE_VERSION" readme.txt || { echo "::error::readme.txt has no changelog entry for $RELEASE_VERSION"; exit 1; }
+          find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l > /dev/null
+          echo "Pre-flight checks passed for $RELEASE_VERSION."
+
+      - name: Deploy to WordPress.org
+        if: steps.guard.outputs.run == 'true'
+        uses: 10up/action-wordpress-plugin-deploy@2.3.0
+        with:
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: ${{ env.SLUG }}
+          VERSION: ${{ env.RELEASE_VERSION }}
+
+      - name: Confirm on WordPress.org and tag in git
+        if: steps.guard.outputs.run == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        run: |
+          set -euo pipefail
+          code="$(curl -s -o /dev/null -w '%{http_code}' "https://plugins.svn.wordpress.org/$SLUG/tags/$RELEASE_VERSION/")"
+          [ "$code" = "200" ] || { echo "::error::tags/$RELEASE_VERSION not found on WordPress.org after deploy"; exit 1; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$RELEASE_VERSION" -m "Release $RELEASE_VERSION (WordPress.org)"
+          git push origin "v$RELEASE_VERSION"
+          echo "### Released $RELEASE_VERSION to WordPress.org" >> "$GITHUB_STEP_SUMMARY"

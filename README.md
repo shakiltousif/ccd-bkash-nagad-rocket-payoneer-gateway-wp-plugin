@@ -1,54 +1,22 @@
 # CodeCareBD - Payment Gateway for WooCommerce
 
-**Contributors:** devshakil, codecarebd
-**Tags:** bKash, nagad, payoneer, rocket, woocommerce paymeny gateway
-**Requires at least:** 6.3
-**Requires PHP:** 7.3
-**Tested up to:** 6.7.1
-**Stable tag:** 0.8
-**License:** GPLv2 or later
-**License URI:** http://www.gnu.org/licenses/gpl-2.0.html
+Manual payment gateways for Bangladeshi WooCommerce stores: **bKash, Nagad, Rocket, Upay, CellFin,
+Bangla QR, bank transfer (BEFTN / NPSB) and Payoneer**. Block checkout and HPOS ready.
 
-CodeCareBD - Payment Gateway plugin integrates bKash, Nagad, Rocket, and Payoneer Payment Gateways with WooCommerce. Lightweight and easy to use.
+- WordPress.org: https://wordpress.org/plugins/codecarebd-bkash-nagad-rocket-payoneer-gateway/
+- Requires WordPress 6.3+, WooCommerce 6.3+, PHP 7.3+. Tested up to WordPress 7.1 / WooCommerce 11.2.
 
-## How to use
+The user-facing description, FAQ and changelog are in [`readme.txt`](readme.txt).
+Release process: [`RELEASING.md`](RELEASING.md).
 
-[youtube https://www.youtube.com/watch?v=yrK5dhQpX68]
+## Layout
 
-## Please note:
-
-- This is a WooCommerce plugin, requiring WooCommerce activation.
-- You need accounts with bKash, Nagad, Rocket, or Payoneer to receive payments.
-
-For suggestions and support, contact us [here](https://codecarebd.com/contact).
-
-## Screenshots
-
-1. Payment Settings (bKash).
-2. Payment Settings (Rocket).
-3. Payment Settings (Nagad).
-4. Payment Settings (Payoneer).
-5. Checkout Page.
-
-## Changelog
-
-### 9/21/2022
-
-- First release.
-
-### 8/24/2023
-
-- Small Fixes.
-
-### 09/01/2023
-
-- Bug Fixes.
-
-### 13/02/2024
-
-- Updated for new WooCommerce version.
-- Fixed validation issues.
-
-### 16/02/2024
-
-- Fixed issues on Single Order Page.
+| Path | Purpose |
+|---|---|
+| `ccd-payment-gateway.php` | Bootstrap, checkout field save/validation, admin order display, advance payment |
+| `includes/ccd-features.php` | Gateway config (single source of truth), validation, charges/discounts, min/max, settings checks, account display, review notice |
+| `includes/ccd-payment-proof.php` | Private payment screenshot upload, attach, admin viewer, cleanup |
+| `includes/classes/CCD_Payment_*.php` | bKash, Nagad, Rocket, Payoneer gateways (settings keys kept from earlier versions) |
+| `includes/classes/class-ccd-gateway-base.php` | Base class + Upay, CellFin, Bank Transfer, Bangla QR |
+| `includes/blocks/` + `assets/js/blocks/` | Cart & Checkout Blocks integration |
+| `assets/js/ccd_scripts.js` | Classic checkout: copy button, uploads, bank account picker |
