@@ -3,9 +3,9 @@
 /**
  * WooCommerce Cart & Checkout Blocks integration for the CodeCareBD gateways.
  *
- * One instance is registered per gateway (ccd_bkash, ccd_nagad, ccd_rocket,
- * ccd_payoneer). It exposes the gateway to the block checkout, enqueues the
- * shared client script and passes the per-gateway data the script needs.
+ * One instance is registered per gateway in ccd_gateway_config(). It exposes
+ * the gateway to the block checkout, enqueues the shared client script and
+ * passes the per-gateway data the script needs.
  */
 
 if (!defined('ABSPATH')) {
@@ -38,26 +38,30 @@ class CCD_Blocks_Support extends \Automattic\WooCommerce\Blocks\Payments\Integra
      */
     public function initialize()
     {
-        $this->settings = get_option('woocommerce_' . $this->name . '_settings', array());
-        if (!is_array($this->settings)) {
-            $this->settings = array();
-        }
+        $this->settings = ccd_gateway_settings($this->name);
     }
 
     /**
-     * Whether the gateway is enabled.
+     * Whether the gateway is enabled (and, for gateways that need it, configured).
      *
      * @return bool
      */
     public function is_active()
     {
-        return isset($this->settings['enabled']) && 'yes' === $this->settings['enabled'];
+        if (!isset($this->settings['enabled']) || 'yes' !== $this->settings['enabled']) {
+            return false;
+        }
+        $gateways = WC()->payment_gateways() ? WC()->payment_gateways()->payment_gateways() : array();
+        if (isset($gateways[$this->name]) && method_exists($gateways[$this->name], 'ccd_is_configured')) {
+            return $gateways[$this->name]->ccd_is_configured();
+        }
+        return true;
     }
 
     /**
      * Register and return the script handle(s) for this payment method.
      *
-     * The same bundled script powers all four gateways; it is registered once
+     * The same bundled script powers all gateways; it is registered once
      * and reused.
      *
      * @return string[]
@@ -75,6 +79,15 @@ class CCD_Blocks_Support extends \Automattic\WooCommerce\Blocks\Payments\Integra
                 true
             );
 
+            wp_add_inline_script(
+                $handle,
+                'window.ccdBlocks = ' . wp_json_encode(array(
+                    'gateways' => array_keys(ccd_gateway_config()),
+                    'proof'    => function_exists('ccd_proof_script_data') ? ccd_proof_script_data() : null,
+                )) . ';',
+                'before'
+            );
+
             if (function_exists('wp_set_script_translations')) {
                 wp_set_script_translations($handle, 'ccd-payment-gateway-domain');
             }
@@ -84,86 +97,45 @@ class CCD_Blocks_Support extends \Automattic\WooCommerce\Blocks\Payments\Integra
     }
 
     /**
-     * Per-gateway configuration map.
-     *
-     * @return array
-     */
-    protected function ccd_config()
-    {
-        $configs = array(
-            'ccd_bkash' => array(
-                'title_key'        => 'bkash_title',
-                'title_default'    => __('Payment With bKash', 'ccd-payment-gateway-domain'),
-                'desc_key'         => 'bkash_description',
-                'icon'             => 'assets/img/bkash.png',
-                'fields'           => array(
-                    array('name' => 'bkash_number', 'label' => __('bKash Number', 'ccd-payment-gateway-domain'), 'placeholder' => 'Ex. 018XXXXXXXX', 'type' => 'tel'),
-                    array('name' => 'bkash_transaction_id', 'label' => __('bKash Transaction ID', 'ccd-payment-gateway-domain'), 'placeholder' => 'Ex. 8N7A6D5EE7M', 'type' => 'text'),
-                ),
-            ),
-            'ccd_nagad' => array(
-                'title_key'        => 'ccd_nagad_title',
-                'title_default'    => __('Payment With Nagad', 'ccd-payment-gateway-domain'),
-                'desc_key'         => 'ccd_nagad_description',
-                'icon'             => 'assets/img/nagad.png',
-                'fields'           => array(
-                    array('name' => 'ccd_nagad_number', 'label' => __('Nagad Number', 'ccd-payment-gateway-domain'), 'placeholder' => 'Ex. 018XXXXXXXX', 'type' => 'tel'),
-                    array('name' => 'ccd_nagad_transaction_id', 'label' => __('Nagad Transaction ID', 'ccd-payment-gateway-domain'), 'placeholder' => 'Ex. 8N7A6D5EE7M', 'type' => 'text'),
-                ),
-            ),
-            'ccd_rocket' => array(
-                'title_key'        => 'ccd_rocket_title',
-                'title_default'    => __('Payment With Rocket', 'ccd-payment-gateway-domain'),
-                'desc_key'         => 'ccd_rocket_description',
-                'icon'             => 'assets/img/rocket.png',
-                'fields'           => array(
-                    array('name' => 'ccd_rocket_number', 'label' => __('Rocket Number', 'ccd-payment-gateway-domain'), 'placeholder' => 'Ex. 018XXXXXXXX', 'type' => 'tel'),
-                    array('name' => 'ccd_rocket_transaction_id', 'label' => __('Rocket Transaction ID', 'ccd-payment-gateway-domain'), 'placeholder' => 'Ex. 8N7A6D5EE7M', 'type' => 'text'),
-                ),
-            ),
-            'ccd_payoneer' => array(
-                'title_key'        => 'ccd_payoneer_title',
-                'title_default'    => __('Payment With Payoneer', 'ccd-payment-gateway-domain'),
-                'desc_key'         => 'ccd_payoneer_description',
-                'icon'             => 'assets/img/payoneer.png',
-                'fields'           => array(
-                    array('name' => 'ccd_payoneeer_sender_email', 'label' => __('Payoneer Email', 'ccd-payment-gateway-domain'), 'placeholder' => 'Ex. example@example.com', 'type' => 'email'),
-                    array('name' => 'ccd_payoneer_transaction_id', 'label' => __('Transaction ID', 'ccd-payment-gateway-domain'), 'placeholder' => 'Ex. 8N7A6D5EE7M', 'type' => 'text'),
-                ),
-            ),
-        );
-
-        return isset($configs[$this->name]) ? $configs[$this->name] : array();
-    }
-
-    /**
      * Data exposed to the client script as wcSettings('<name>_data').
      *
      * @return array
      */
     public function get_payment_method_data()
     {
-        $config = $this->ccd_config();
-        if (empty($config)) {
+        $config = ccd_gateway_config();
+        if (!isset($config[$this->name])) {
             return array();
         }
+        $config = $config[$this->name];
 
         $title       = !empty($this->settings[$config['title_key']]) ? $this->settings[$config['title_key']] : $config['title_default'];
         $description = isset($this->settings[$config['desc_key']]) ? $this->settings[$config['desc_key']] : '';
+        $account     = ccd_get_account_display($this->name);
 
-        // Receiving account (with copy button) and optional QR code.
-        $account = ccd_get_account_display($this->name);
+        $fields = array();
+        foreach ($config['fields'] as $field) {
+            $fields[] = array(
+                'name'        => $field['name'],
+                'label'       => $field['label'],
+                'placeholder' => $field['placeholder'],
+                'type'        => $field['type'],
+            );
+        }
 
         return array(
             'title'          => wp_strip_all_tags($title),
             'description'    => wp_strip_all_tags($description),
-            'accountText'    => $account['text'],
-            'accountValue'   => $account['value'],
+            'accountRows'    => $account['rows'],
             'qrCode'         => $account['qr'],
             'chargeNote'     => ccd_get_charge_note($this->name),
+            'discountNote'   => ccd_get_discount_note($this->name),
             'anyCharge'      => ccd_any_charge_enabled(),
+            'bankAccounts'   => 'ccd_bank' === $this->name ? ccd_bank_picker_accounts() : array(),
+            'bankI18n'       => 'ccd_bank' === $this->name ? ccd_bank_picker_i18n() : array(),
+            'proofMode'      => function_exists('ccd_proof_mode') ? ccd_proof_mode($this->name) : 'off',
             'icon'           => CCD_PAYMENT_GATEWAY_PLUGIN_URL . $config['icon'],
-            'fields'         => $config['fields'],
+            'fields'         => $fields,
             'advancePayment' => ccd_get_advance_payment_display(),
             'supports'       => $this->get_supported_features(),
         );

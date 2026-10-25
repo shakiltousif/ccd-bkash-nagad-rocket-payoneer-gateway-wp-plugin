@@ -3,18 +3,18 @@ Contributors: devshakil, codecarebd, shakvaro
 Requires at least: 6.3
 Requires PHP: 7.3
 Tested up to: 7.1
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 WC requires at least: 6.3
 WC tested up to: 11.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Tags: bkash, nagad, rocket, woocommerce, payment-gateway
+Tags: bkash, nagad, rocket, upay, bangla qr
 
-Integrate bKash, Nagad, Rocket and Payoneer manual payment gateways with WooCommerce. Block checkout and HPOS ready.
+bKash, Nagad, Rocket, Upay, CellFin, Bangla QR, bank transfer and Payoneer manual payments for WooCommerce. Block checkout and HPOS ready.
 
 == Description ==
 
-**CodeCareBD - Payment Gateway for WooCommerce** is a free, lightweight plugin that adds **bKash**, **Nagad**, **Rocket** and **Payoneer** as manual payment methods to your WooCommerce store. It is built for Bangladeshi e-commerce and F-commerce sellers who want to accept mobile financial service (MFS) payments without expensive merchant API onboarding.
+**CodeCareBD - Payment Gateway for WooCommerce** is a free, lightweight plugin that adds **bKash**, **Nagad**, **Rocket**, **Upay**, **CellFin (Islami Bank)**, **Bangla QR**, **bank transfer (BEFTN / NPSB)** and **Payoneer** as manual payment methods to your WooCommerce store. It is built for Bangladeshi e-commerce and F-commerce sellers who want to accept mobile financial service (MFS) payments without expensive merchant API onboarding.
 
 When a customer places an order, they send money to your bKash, Nagad or Rocket number (Agent or Personal), then confirm the payment by entering their **mobile number and Transaction ID (TrxID)** right on the checkout page. You verify the payment and process the order from your WooCommerce dashboard. Payoneer is supported the same way using the sender email and transaction ID.
 
@@ -23,7 +23,7 @@ This makes it the perfect **bKash WooCommerce payment gateway** (and Nagad / Roc
 = Why choose this plugin? =
 
 * **100% free** - no monthly fees, no per-transaction charges from the plugin.
-* **Four payment methods in one plugin** - bKash, Nagad, Rocket and Payoneer.
+* **Eight payment methods in one plugin** - bKash, Nagad, Rocket, Upay, CellFin, Bangla QR, bank transfer and Payoneer.
 * **Block Checkout ready** - works natively with the new WooCommerce Cart & Checkout Blocks (the default checkout for new stores), as well as the classic shortcode checkout.
 * **HPOS compatible** - fully supports WooCommerce High-Performance Order Storage (Custom Order Tables).
 * **No API or merchant account required** - use your existing personal or agent number.
@@ -31,14 +31,21 @@ This makes it the perfect **bKash WooCommerce payment gateway** (and Nagad / Roc
 
 = Key Features =
 
-* Accept payments via **bKash, Nagad, Rocket and Payoneer**.
-* Choose **Agent** or **Personal** account type for each gateway.
+* Accept payments via **bKash, Nagad, Rocket, Upay, CellFin, Bangla QR, bank transfer and Payoneer**.
+* **Bangla QR** - show your Bangla QR code; customers pay from any bank or mobile banking app.
+* **Bank transfer with multiple accounts** - add as many bank accounts as you need; customers search and pick the account they paid into.
+* Choose **Agent**, **Personal** or **Merchant** account type for each wallet.
+* **Smart number input** - accepts Bangla digits, +880 numbers, spaces and dashes, and 12-digit Rocket account numbers.
+* Optional **payment screenshot / PDF upload** (off, optional or required per gateway). Files are stored privately; only shop managers can view them.
+* Optional **prepayment discount** per gateway to encourage prepaid orders over cash on delivery.
+* **Minimum / maximum order amount** per gateway, e.g. to respect your wallet's send money limit.
 * Show your receiving number/email and custom instructions on the checkout page, with a one-click **Copy** button.
 * Show your **payment QR code** (bKash, Nagad, Rocket or Bangla QR) at checkout so customers can scan to pay.
 * Collect the customer's **sender number and Transaction ID** for easy verification.
 * **Duplicate Transaction ID protection** - a Transaction ID that was already used for another order is rejected at checkout, stopping fake or reused payment claims.
 * Optional **send money charge** per gateway, as a percentage (e.g. bKash 1.85%) or a fixed amount, added automatically to the order total and updated live on both classic and block checkout.
-* **Advance / partial payment** - let customers pay only the delivery charge in advance, with a custom "Advance Received" order status (great for reducing fake cash-on-delivery orders).
+* **Advance / partial payment** - let customers pay the delivery charge, or a fixed amount for inside / outside Dhaka, in advance, with a custom "Advance Received" order status and an optional minimum order total (great for reducing fake cash-on-delivery orders).
+* **Settings checks** - wrong numbers, routing numbers, QR links or limits are caught when you save, so customers never see a broken payment method.
 * Transaction ID and account number shown on the **admin order screen** and order list columns.
 * Custom **thank-you page message** and order email instructions per gateway.
 * Number and Transaction ID validation on both classic and block checkout.
@@ -99,6 +106,18 @@ The order is not placed and the customer sees a message asking them to check the
 
 Go to WooCommerce > Settings > Payments, open bKash, Nagad or Rocket, and use the "Select image" button next to "QR Code Image". The QR code appears on the checkout page under your number.
 
+= Can I add more than one bank account? =
+
+Yes. Under Bank Transfer, use "+ Add account" to add as many accounts as you need. When there is more than one, customers get a searchable list and choose the account they paid into, and the order shows which account it was.
+
+= Where are payment screenshots stored? Can anyone see them? =
+
+In a private folder inside your uploads directory, with random file names and access blocked. They never appear in the Media Library. Only users who can manage orders can open them, from the order screen. Uploads that never become an order are deleted after 24 hours. The maximum size is 5 MB, or your server's upload limit if that is lower.
+
+= What is Bangla QR? =
+
+Bangladesh Bank's national interoperable QR code. One QR code can be paid from any participating bank or mobile financial service app. Enable "Bangla QR", add your merchant name and upload your Bangla QR image.
+
 = Which currencies are supported? =
 
 The plugin works with your WooCommerce currency. It is designed primarily for BDT (Bangladeshi Taka) but does not restrict the store currency.
@@ -130,6 +149,21 @@ Data is sent over HTTPS to https://track.shakvaro.cloud and is handled as descri
 5. Checkout Page.
 
 == Changelog ==
+
+= 1.5.0 - 2026-11-01 =
+* NEW: Upay, CellFin (Islami Bank), Bangla QR and Bank Transfer (BEFTN / NPSB / RTGS) payment methods.
+* NEW: Bank Transfer supports any number of bank accounts, with a searchable "account you paid into" picker at checkout.
+* NEW: Optional payment screenshot / PDF upload per gateway (off, optional or required), stored privately and viewable only by shop managers.
+* NEW: Prepayment discount per gateway (percentage or fixed).
+* NEW: Minimum / maximum order amount per gateway.
+* NEW: Advance payment can be a fixed amount for inside / outside Dhaka (choose the districts) and can require a minimum order total.
+* NEW: "Merchant" account type for bKash, Nagad, Rocket and Upay.
+* NEW: Settings are checked on save: invalid receiving numbers, routing numbers, QR links, percentages over 100% and min/max conflicts are reported and not saved.
+* IMPROVED: Customer numbers in Bangla digits, with +880, spaces or dashes are accepted and saved in a standard format.
+* FIXED: Rocket now accepts the 12-digit Rocket account number (mobile number + check digit) as well as the 11-digit mobile number.
+* FIXED: The custom thank you page message now shows for bKash, Nagad and Rocket orders (only Payoneer's was shown before).
+* FIXED: On block checkout, the advance payment amounts now update when the address, shipping or payment method changes.
+* FIXED: Orders no longer stay "Pending payment" when a gateway's order status setting is empty.
 
 = 1.4.0 - 2026-10-25 =
 * NEW: Duplicate Transaction ID protection. A Transaction ID already used on another order is rejected at checkout (classic and block checkout). Failed and cancelled orders are ignored.
@@ -210,6 +244,9 @@ Data is sent over HTTPS to https://track.shakvaro.cloud and is handled as descri
 * First release.
 
 == Upgrade Notice ==
+
+= 1.5.0 =
+Adds Upay, CellFin, Bangla QR and multi-account bank transfer, payment screenshot upload, discounts, order limits and Dhaka zone advance payments. Fixes Rocket 12-digit account numbers and thank you messages. Existing settings are kept.
 
 = 1.4.0 =
 Adds duplicate Transaction ID protection, a Copy button and QR code at checkout, and configurable percentage or fixed send money charges. Existing charge settings are kept.

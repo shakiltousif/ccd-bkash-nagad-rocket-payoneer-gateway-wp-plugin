@@ -26,7 +26,7 @@ class CCD_Payment_Payoneer extends WC_Payment_Gateway
         $this->init_settings();
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
-        add_filter('woocommerce_thankyou_order_received_text', array($this, 'ccd_payoneer_thankyou_page_function'));
+        add_filter('woocommerce_thankyou_order_received_text', array($this, 'ccd_payoneer_thankyou_page_function'), 10, 2);
         add_action('woocommerce_email_before_order_table', array($this, 'ccd_payoneer_email_instructions_function'), 15, 5);
     }
 
@@ -78,60 +78,8 @@ class CCD_Payment_Payoneer extends WC_Payment_Gateway
     {
         global $woocommerce;
         
-        // Check if advance payment is enabled
-        $advance_payment_enabled = get_option('ccd_enable_advance_payment', 'no') === 'yes';
-        
-        if ($advance_payment_enabled && $woocommerce->cart->needs_shipping()) {
-            $shipping_total = $woocommerce->cart->get_shipping_total();
-            $shipping_tax = $woocommerce->cart->get_shipping_tax();
-            $advance_amount = floatval($shipping_total) + floatval($shipping_tax);
-            
-            // Calculate remaining amount: total cart amount minus shipping (advance payment)
-            $cart_total = floatval($woocommerce->cart->get_total(''));
-            $remaining_amount = $cart_total - $advance_amount;
-            
-            if ($advance_amount > 0) {
-                // Get customizable texts from settings with fallback to defaults
-                $advance_payment_title = get_option('ccd_advance_payment_title', '');
-                $advance_payment_title = !empty($advance_payment_title) ? $advance_payment_title : __('Advance Payment Information:', 'ccd-payment-gateway-domain');
-                $advance_payment_title = apply_filters('ccd_advance_payment_title', $advance_payment_title);
-                
-                $advance_payment_text = get_option('ccd_advance_payment_text', '');
-                $advance_payment_text = !empty($advance_payment_text) ? $advance_payment_text : __('You will pay only the delivery charge as advance payment:', 'ccd-payment-gateway-domain');
-                $advance_payment_text = apply_filters('ccd_advance_payment_text', $advance_payment_text);
-                
-                $remaining_payment_text = get_option('ccd_remaining_payment_text', '');
-                $remaining_payment_text = !empty($remaining_payment_text) ? $remaining_payment_text : __('Remaining amount to be paid later:', 'ccd-payment-gateway-domain');
-                $remaining_payment_text = apply_filters('ccd_remaining_payment_text', $remaining_payment_text);
-                
-                // Replace {amount} placeholder if used
-                $advance_formatted = wc_price($advance_amount, array('currency' => get_woocommerce_currency()));
-                $remaining_formatted = wc_price($remaining_amount, array('currency' => get_woocommerce_currency()));
-                
-                $advance_payment_text = str_replace('{amount}', $advance_formatted, $advance_payment_text);
-                $remaining_payment_text = str_replace('{amount}', $remaining_formatted, $remaining_payment_text);
-                
-                echo '<div class="ccd_advance_payment_notice" style="background: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin: 15px 0; border-radius: 4px;">';
-                echo '<strong>' . esc_html($advance_payment_title) . '</strong><br>';
-                
-                // If placeholder was used, show text as-is, otherwise append amount
-                if (strpos(get_option('ccd_advance_payment_text', ''), '{amount}') !== false) {
-                    echo wp_kses_post($advance_payment_text) . '<br>';
-                } else {
-                    echo esc_html($advance_payment_text) . ' <strong>' . $advance_formatted . '</strong><br>';
-                }
-                
-                // If placeholder was used, show text as-is, otherwise append amount
-                if (strpos(get_option('ccd_remaining_payment_text', ''), '{amount}') !== false) {
-                    echo wp_kses_post($remaining_payment_text);
-                } else {
-                    echo esc_html($remaining_payment_text) . ' <strong>' . $remaining_formatted . '</strong>';
-                }
-                
-                echo '</div>';
-            }
-        }
-        
+        ccd_render_advance_notice();
+
         // $bkash_charge = ($this->bkash_charge == 'yes') ? esc_html__(' Also note that 1.85% bKash "SEND MONEY" cost will be added with net price. Total amount you need to send us at', "stb") . ' ' . get_woocommerce_currency_symbol() . $woocommerce->cart->total : '';
         // echo wpautop(wptexturize(esc_html__($this->description, "ccd-payment-gateway-domain")) . $bkash_charge);
         ccd_render_account_box($this->id);
@@ -150,6 +98,7 @@ class CCD_Payment_Payoneer extends WC_Payment_Gateway
                 </tr>
             </table>
         </div>
+        <?php ccd_render_payment_proof_field($this->id); ?>
 
 <?php
     }
@@ -159,53 +108,8 @@ class CCD_Payment_Payoneer extends WC_Payment_Gateway
         global $woocommerce;
         $order = wc_get_order($order_id);
 
-        // Check if advance payment is enabled
-        $advance_payment_enabled = get_option('ccd_enable_advance_payment', 'no') === 'yes';
-        
-        if ($advance_payment_enabled) {
-            // Get shipping total (advance payment amount)
-            $shipping_total = $order->get_shipping_total();
-            $shipping_tax = $order->get_shipping_tax();
-            $advance_amount = floatval($shipping_total) + floatval($shipping_tax);
-            
-            // Only proceed if there's a shipping charge
-            if ($advance_amount > 0) {
-                // Store original order total
-                $original_total = $order->get_total();
-                $remaining_amount = $original_total - $advance_amount;
-                
-                // Store advance payment meta
-                $order->update_meta_data('_ccd_advance_payment_received', 'yes');
-                $order->update_meta_data('_ccd_original_order_total', $original_total);
-                $order->update_meta_data('_ccd_advance_amount_paid', $advance_amount);
-                $order->update_meta_data('_ccd_remaining_amount', $remaining_amount);
-                
-                // Update order total to shipping charge only
-                $order->set_total($advance_amount);
-                $order->save();
-                
-                // Set status to "Advance Received"
-                $order->update_status('advance-received', esc_html__('Advance payment (delivery charge) received via Payoneer. Remaining amount: ', 'ccd-payment-gateway-domain') . wc_price($remaining_amount));
-            } else {
-                // No shipping charge, proceed with normal payment
-                $status = null;
-                if ('wc-' === substr($this->ccd_payoneer_order_status, 0, 3)) {
-                    $status = substr($this->ccd_payoneer_order_status, 3);
-                } else {
-                    $status = $this->ccd_payoneer_order_status;
-                }
-                $order->update_status($status, esc_html__('Checkout with Payoneer payment. ', "ccd-payment-gateway-domain"));
-            }
-        } else {
-            // Normal payment flow
-            $status = null;
-            if ('wc-' === substr($this->ccd_payoneer_order_status, 0, 3)) {
-                $status = substr($this->ccd_payoneer_order_status, 3);
-            } else {
-                $status = $this->ccd_payoneer_order_status;
-            }
-            // Mark as on-hold (we're awaiting the Payoneer)
-            $order->update_status($status, esc_html__('Checkout with Payoneer payment. ', "ccd-payment-gateway-domain"));
+        if (!ccd_apply_advance_payment($order, 'Payoneer')) {
+            ccd_apply_order_status($order, $this->ccd_payoneer_order_status, 'Payoneer');
         }
 
         // Reduce stock levels
@@ -221,18 +125,15 @@ class CCD_Payment_Payoneer extends WC_Payment_Gateway
         );
     }
 
-    public function ccd_payoneer_thankyou_page_function()
+    public function ccd_payoneer_thankyou_page_function($text = '', $order = null)
     {
-        $order_id = get_query_var('order-received');
-        $order = new WC_Order($order_id);
-        if ($order->get_payment_method() == $this->id) {
-
-            $thankyou = $this->ccd_payoneer_instructions;
-            return $thankyou;
-        } else {
-
-            return esc_html__('Thank you. Your order has been received.', "ccd-payment-gateway-domain");
+        if (!is_a($order, 'WC_Order')) {
+            $order = wc_get_order(absint(get_query_var('order-received')));
         }
+        if ($order && $order->get_payment_method() === $this->id && '' !== trim((string) $this->ccd_payoneer_instructions)) {
+            return wp_kses_post($this->ccd_payoneer_instructions);
+        }
+        return $text;
     }
 
 

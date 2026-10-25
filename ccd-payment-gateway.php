@@ -3,9 +3,9 @@
 /**
  * Plugin Name: CodeCareBD - bKash, Nagad, Rocket, Payoneer Gateway
  * Plugin URI: https://wordpress.org/plugins/codecarebd-bkash-nagad-rocket-payoneer-gateway
- * Description: CodeCareBD - Bkash, Nagad, Rocket, Payoneer Gateway plugin is for WooCommerce. This plugin will help you to integrate Bkash, Nagad, Rocket, and Payoneer Payment Gateway.
+ * Description: Manual payment gateways for WooCommerce: bKash, Nagad, Rocket, Upay, CellFin, Bangla QR, bank transfer and Payoneer. Block checkout and HPOS ready.
  * Author: Shakil Ahamed
- * Version: 1.4.0
+ * Version: 1.5.0
  * Requires at least: 6.3
  * Requires PHP: 7.3
  * Tested up to: 7.1
@@ -22,7 +22,7 @@
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 // Define plugin constants
-define('CCD_PAYMENT_GATEWAY_VERSION', '1.4.0');
+define('CCD_PAYMENT_GATEWAY_VERSION', '1.5.0');
 define('CCD_PAYMENT_GATEWAY_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CCD_PAYMENT_GATEWAY_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -31,6 +31,10 @@ register_activation_hook(__FILE__, function () {
         require_once __DIR__ . '/vendor/shakvaro-wp-insights/src/Insights.php';
     }
     \Shakvaro\WP\Insights\Insights::mark_activated('codecarebd-bkash-nagad-rocket-payoneer-gateway');
+});
+
+register_deactivation_hook(__FILE__, function () {
+    wp_clear_scheduled_hook('ccd_proof_cleanup');
 });
 
 //include plugin modules
@@ -58,7 +62,7 @@ function ccd_register_block_payment_methods($payment_method_registry)
 {
     require_once __DIR__ . '/includes/blocks/class-ccd-blocks-support.php';
 
-    foreach (array('ccd_bkash', 'ccd_nagad', 'ccd_rocket', 'ccd_payoneer') as $ccd_gateway_id) {
+    foreach (array_keys(ccd_gateway_config()) as $ccd_gateway_id) {
         $payment_method_registry->register(new CCD_Blocks_Support($ccd_gateway_id));
     }
 }
@@ -109,6 +113,7 @@ if (is_plugin_active('woocommerce/woocommerce.php')) {
 
     // Shared features: charge, duplicate transaction ID check, account box, review notice.
     require_once __DIR__ . '/includes/ccd-features.php';
+    require_once __DIR__ . '/includes/ccd-payment-proof.php';
 } else {
 
     //notice if Woocommerce isn't installed properly
@@ -141,6 +146,10 @@ function ccd_rocket_payment_options($load_gateways)
     $load_gateways[] = 'CCD_Payment_Nagad';
     $load_gateways[] = 'CCD_Payment_Rocket';
     $load_gateways[] = 'CCD_Payment_Payoneer';
+    $load_gateways[] = 'CCD_Payment_Upay';
+    $load_gateways[] = 'CCD_Payment_Cellfin';
+    $load_gateways[] = 'CCD_Payment_Bank';
+    $load_gateways[] = 'CCD_Payment_BanglaQR';
     return $load_gateways;
 }
 
@@ -153,6 +162,7 @@ function ccd_payment_options_init()
     require_once(__DIR__ . '/includes/classes/CCD_Payment_Nagad.php');
     require_once(__DIR__ . '/includes/classes/CCD_Payment_Rocket.php');
     require_once(__DIR__ . '/includes/classes/CCD_Payment_Payoneer.php');
+    require_once(__DIR__ . '/includes/classes/class-ccd-gateway-base.php');
 }
 
 
@@ -167,24 +177,13 @@ function ccd_payment_options_init()
  */
 function ccd_payment_field_map()
 {
-    return array(
-        'ccd_bkash' => array(
-            'bkash_number'             => '_bkash_number',
-            'bkash_transaction_id'     => '_bkash_transaction',
-        ),
-        'ccd_nagad' => array(
-            'ccd_nagad_number'         => '_ccd_nagad_number',
-            'ccd_nagad_transaction_id' => '_ccd_nagad_transaction',
-        ),
-        'ccd_rocket' => array(
-            'ccd_rocket_number'         => '_ccd_rocket_number',
-            'ccd_rocket_transaction_id' => '_ccd_rocket_transaction',
-        ),
-        'ccd_payoneer' => array(
-            'ccd_payoneeer_sender_email' => '_ccd_payoneeer_sender_email',
-            'ccd_payoneer_transaction_id' => '_ccd_payoneer_transaction_id',
-        ),
-    );
+    $map = array();
+    foreach (ccd_gateway_config() as $gateway_id => $config) {
+        foreach ($config['fields'] as $field) {
+            $map[$gateway_id][$field['name']] = $field['meta'];
+        }
+    }
+    return $map;
 }
 
 /**
@@ -196,20 +195,24 @@ function ccd_payment_field_map()
  */
 function ccd_save_payment_fields($order, $method, $data)
 {
-    $map = ccd_payment_field_map();
+    $config = ccd_gateway_config();
 
-    if (!is_a($order, 'WC_Order') || !isset($map[$method])) {
+    if (!is_a($order, 'WC_Order') || !isset($config[$method])) {
         return;
     }
 
-    foreach ($map[$method] as $field => $meta_key) {
-        if (!isset($data[$field])) {
+    foreach ($config[$method]['fields'] as $field) {
+        if (!isset($data[$field['name']])) {
             continue;
         }
-        $value = ('ccd_payoneeer_sender_email' === $field)
-            ? sanitize_email($data[$field])
-            : sanitize_text_field($data[$field]);
-        $order->update_meta_data($meta_key, $value);
+        $order->update_meta_data($field['meta'], ccd_normalize_field($field['rule'], $data[$field['name']]));
+    }
+
+    if ('ccd_bank' === $method) {
+        $paid_to = ccd_bank_paid_to_label($data);
+        if ('' !== $paid_to) {
+            $order->update_meta_data('_ccd_bank_paid_to', $paid_to);
+        }
     }
 
     $order->save();
@@ -226,49 +229,33 @@ function ccd_save_payment_fields($order, $method, $data)
  */
 function ccd_validate_payment_fields($method, $data, $exclude_order_id = 0)
 {
+    $config = ccd_gateway_config();
     $errors = array();
 
-    if ($method === 'ccd_bkash' || $method === 'ccd_nagad' || $method === 'ccd_rocket') {
-        $labels = array(
-            'ccd_bkash'  => array('bKash', 'bkash_number', 'bkash_transaction_id'),
-            'ccd_nagad'  => array('Nagad', 'ccd_nagad_number', 'ccd_nagad_transaction_id'),
-            'ccd_rocket' => array('Rocket', 'ccd_rocket_number', 'ccd_rocket_transaction_id'),
-        );
-        list($label, $number_field, $trx_field) = $labels[$method];
+    if (!isset($config[$method])) {
+        return $errors;
+    }
 
-        $number = isset($data[$number_field]) ? sanitize_text_field($data[$number_field]) : '';
-        $trx    = isset($data[$trx_field]) ? sanitize_text_field($data[$trx_field]) : '';
+    foreach ($config[$method]['fields'] as $field) {
+        $raw   = isset($data[$field['name']]) ? (string) $data[$field['name']] : '';
+        $value = ccd_normalize_field($field['rule'], $raw);
 
-        if ($number === '') {
-            /* translators: %s: payment method label */
-            $errors[] = sprintf(__('Please enter your %s number.', 'ccd-payment-gateway-domain'), $label);
-        } elseif (!preg_match('/^[0-9]{11}$/', $number)) {
-            /* translators: %s: payment method label */
-            $errors[] = sprintf(__('Please enter a valid %s phone number.', 'ccd-payment-gateway-domain'), $label);
+        // "Missing" only when nothing was typed; a value that normalises to '' (e.g. a bad email) is invalid.
+        if ('' === trim($raw)) {
+            $errors[] = ccd_field_error($field, $config[$method]['label'], true);
+        } elseif ('' === $value) {
+            $errors[] = ccd_field_error($field, $config[$method]['label'], false);
+        } elseif (!ccd_is_valid_field($field['rule'], $value)) {
+            $errors[] = ccd_field_error($field, $config[$method]['label'], false);
         }
+    }
 
-        if ($trx === '') {
-            /* translators: %s: payment method label */
-            $errors[] = sprintf(__('Please enter your %s transaction ID.', 'ccd-payment-gateway-domain'), $label);
-        } elseif (strlen($trx) < 5) {
-            /* translators: %s: payment method label */
-            $errors[] = sprintf(__('Please enter a valid %s transaction ID.', 'ccd-payment-gateway-domain'), $label);
-        }
-    } elseif ($method === 'ccd_payoneer') {
-        $email = isset($data['ccd_payoneeer_sender_email']) ? sanitize_email($data['ccd_payoneeer_sender_email']) : '';
-        $trx   = isset($data['ccd_payoneer_transaction_id']) ? sanitize_text_field($data['ccd_payoneer_transaction_id']) : '';
+    if (empty($errors) && 'ccd_bank' === $method) {
+        $errors = ccd_bank_paid_to_errors($data);
+    }
 
-        if ($email === '') {
-            $errors[] = __('Please enter your Payoneer sender email.', 'ccd-payment-gateway-domain');
-        } elseif (!is_email($email)) {
-            $errors[] = __('Please enter a valid Payoneer sender email.', 'ccd-payment-gateway-domain');
-        }
-
-        if ($trx === '') {
-            $errors[] = __('Please enter your Payoneer transaction ID.', 'ccd-payment-gateway-domain');
-        } elseif (strlen($trx) < 5) {
-            $errors[] = __('Please enter a valid Payoneer transaction ID.', 'ccd-payment-gateway-domain');
-        }
+    if (empty($errors) && function_exists('ccd_payment_proof_errors')) {
+        $errors = ccd_payment_proof_errors($method, isset($data['ccd_payment_proof']) ? $data['ccd_payment_proof'] : '');
     }
 
     if (empty($errors) && function_exists('ccd_duplicate_transaction_errors')) {
@@ -307,7 +294,16 @@ function ccd_bkash_additional_fields_update_function($order_id)
         }
     }
 
+    if (isset($_POST['ccd_bank_paid_to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $data['ccd_bank_paid_to'] = sanitize_text_field(wp_unslash($_POST['ccd_bank_paid_to'])); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+    }
+
     ccd_save_payment_fields($order, $method, $data);
+
+    $proof_key = 'ccd_payment_proof_' . $method;
+    if (!empty($_POST[$proof_key]) && function_exists('ccd_attach_payment_proof')) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        ccd_attach_payment_proof($order, $method, sanitize_text_field(wp_unslash($_POST[$proof_key]))); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+    }
 }
 
 /**
@@ -333,7 +329,7 @@ function ccd_blocks_update_order_from_request($order, $request)
     if (is_array($raw)) {
         foreach ($raw as $item) {
             if (isset($item['key'])) {
-                $payment_data[$item['key']] = isset($item['value']) ? $item['value'] : '';
+                $payment_data[$item['key']] = isset($item['value']) ? sanitize_text_field($item['value']) : '';
             }
         }
     }
@@ -349,6 +345,10 @@ function ccd_blocks_update_order_from_request($order, $request)
     }
 
     ccd_save_payment_fields($order, $method, $payment_data);
+
+    if (!empty($payment_data['ccd_payment_proof']) && function_exists('ccd_attach_payment_proof')) {
+        ccd_attach_payment_proof($order, $method, $payment_data['ccd_payment_proof']);
+    }
 }
 
 
@@ -365,49 +365,48 @@ function ccd_bkash_admin_order_data_function($order)
     }
 
     $method = $order->get_payment_method();
-    $map    = ccd_payment_field_map();
+    $config = ccd_gateway_config();
 
-    if (!isset($map[$method])) {
+    if (!isset($config[$method])) {
         return;
     }
 
-    $meta_keys   = array_values($map[$method]);
-    $account     = sanitize_text_field($order->get_meta($meta_keys[0]));
-    $transaction = sanitize_text_field($order->get_meta($meta_keys[1]));
-
-    $titles  = array(
-        'ccd_bkash'    => 'bKash No.',
-        'ccd_nagad'    => 'Nagad No.',
-        'ccd_rocket'   => 'Rocket No.',
-        'ccd_payoneer' => 'Payoneer Email: ',
-    );
-    $images  = array(
-        'ccd_bkash'    => 'assets/img/bkash.png',
-        'ccd_nagad'    => 'assets/img/nagad.png',
-        'ccd_rocket'   => 'assets/img/rocket.png',
-        'ccd_payoneer' => 'assets/img/payoneer.png',
-    );
-    $account_title = $titles[$method];
-    $img_url       = plugins_url($images[$method], __FILE__);
+    $fields      = $config[$method]['fields'];
+    $account     = sanitize_text_field($order->get_meta($fields[0]['meta']));
+    $transaction = sanitize_text_field($order->get_meta($fields[1]['meta']));
+    $img_url     = plugins_url($config[$method]['icon'], __FILE__);
 
     // Check if advance payment is enabled and used
     $is_advance_payment = $order->get_meta('_ccd_advance_payment_received');
     $original_total = $order->get_meta('_ccd_original_order_total');
     $advance_amount = $order->get_meta('_ccd_advance_amount_paid');
     $remaining_amount = $order->get_meta('_ccd_remaining_amount');
+    $proof_url = function_exists('ccd_payment_proof_admin_url') ? ccd_payment_proof_admin_url($order) : '';
 ?>
     <div class="form-field form-field-wide">
-        <img src='<?php echo esc_attr($img_url); ?>' width="150" />
+        <img src='<?php echo esc_attr($img_url); ?>' width="150" style="max-height:60px;width:auto;" />
         <table class="wp-list-table widefat fixed striped posts">
             <tbody>
                 <tr>
-                    <th><strong><?php echo esc_html($account_title); ?></strong></th>
-                    <td>: <?php echo esc_attr($account); ?></td>
+                    <th><strong><?php echo esc_html($fields[0]['label']); ?></strong></th>
+                    <td>: <?php echo esc_html($account); ?></td>
                 </tr>
                 <tr>
-                    <th><strong><?php esc_html_e('Transaction ID.', 'ccd-payment-gateway-domain'); ?></strong></th>
-                    <td>: <?php echo esc_attr($transaction); ?></td>
+                    <th><strong><?php echo esc_html($fields[1]['label']); ?></strong></th>
+                    <td>: <?php echo esc_html($transaction); ?></td>
                 </tr>
+                <?php if ($order->get_meta('_ccd_bank_paid_to')) : ?>
+                <tr>
+                    <th><strong><?php esc_html_e('Paid Into', 'ccd-payment-gateway-domain'); ?></strong></th>
+                    <td>: <?php echo esc_html($order->get_meta('_ccd_bank_paid_to')); ?></td>
+                </tr>
+                <?php endif; ?>
+                <?php if ($proof_url) : ?>
+                <tr>
+                    <th><strong><?php esc_html_e('Payment Screenshot', 'ccd-payment-gateway-domain'); ?></strong></th>
+                    <td>: <a href="<?php echo esc_url($proof_url); ?>" target="_blank" rel="noopener"><?php esc_html_e('View file', 'ccd-payment-gateway-domain'); ?></a></td>
+                </tr>
+                <?php endif; ?>
                 <?php if ($is_advance_payment === 'yes' && $original_total) : ?>
                 <tr>
                     <th colspan="2"><strong style="color: #2271b1;"><?php esc_html_e('Advance Payment Information', 'ccd-payment-gateway-domain'); ?></strong></th>
@@ -445,23 +444,15 @@ function ccd_additional_info_order_review_fields_function($order)
     }
 
     $method = $order->get_payment_method();
-    $map    = ccd_payment_field_map();
+    $config = ccd_gateway_config();
 
-    if (!isset($map[$method])) {
+    if (!isset($config[$method])) {
         return;
     }
 
-    $meta_keys   = array_values($map[$method]);
-    $account     = sanitize_text_field($order->get_meta($meta_keys[0]));
-    $transaction = sanitize_text_field($order->get_meta($meta_keys[1]));
-
-    $titles = array(
-        'ccd_bkash'    => 'bKash No:',
-        'ccd_nagad'    => 'Nagad No:',
-        'ccd_rocket'   => 'Rocket No:',
-        'ccd_payoneer' => 'Payoneer Email:',
-    );
-    $account_title = $titles[$method];
+    $fields      = $config[$method]['fields'];
+    $account     = sanitize_text_field($order->get_meta($fields[0]['meta']));
+    $transaction = sanitize_text_field($order->get_meta($fields[1]['meta']));
 
     // Check if advance payment is enabled and used
     $is_advance_payment = $order->get_meta('_ccd_advance_payment_received');
@@ -471,13 +462,19 @@ function ccd_additional_info_order_review_fields_function($order)
 ?>
     <table>
         <tr>
-            <th><?php echo esc_html($account_title); ?></th>
-            <td><?php echo esc_attr($account); ?></td>
+            <th><?php echo esc_html($fields[0]['label']); ?>:</th>
+            <td><?php echo esc_html($account); ?></td>
         </tr>
         <tr>
-            <th><?php esc_html_e('Transaction ID:', 'ccd-payment-gateway-domain'); ?></th>
-            <td><?php echo esc_attr($transaction); ?></td>
+            <th><?php echo esc_html($fields[1]['label']); ?>:</th>
+            <td><?php echo esc_html($transaction); ?></td>
         </tr>
+        <?php if ($order->get_meta('_ccd_payment_proof')) : ?>
+        <tr>
+            <th><?php esc_html_e('Payment Screenshot:', 'ccd-payment-gateway-domain'); ?></th>
+            <td><?php esc_html_e('Received', 'ccd-payment-gateway-domain'); ?></td>
+        </tr>
+        <?php endif; ?>
         <?php if ($is_advance_payment === 'yes' && $original_total) : ?>
         <tr>
             <th colspan="2"><strong style="color: #2271b1;"><?php esc_html_e('Advance Payment Information', 'ccd-payment-gateway-domain'); ?></strong></th>
@@ -555,28 +552,23 @@ function ccd_get_order_column_values($order)
         return array('', '');
     }
 
-    $labels = array(
-        'ccd_bkash'    => 'Bkash',
-        'ccd_nagad'    => 'Nagad',
-        'ccd_rocket'   => 'Rocket',
-        'ccd_payoneer' => 'Payoneer',
-    );
-    $map = ccd_payment_field_map();
+    $config = ccd_gateway_config();
+    $method = $order->get_payment_method();
 
-    $account = '';
-    $tran_id = '';
+    // Prefer the order's own gateway; fall back to scanning (orders whose gateway was renamed).
+    $candidates = isset($config[$method]) ? array($method => $config[$method]) : $config;
 
-    foreach ($map as $method => $fields) {
-        $meta_keys = array_values($fields);
-        $number    = $order->get_meta($meta_keys[0]);
-        if ($number !== '') {
-            $account = sanitize_text_field($number) . ' ( ' . $labels[$method] . ' )';
-            $tran_id = sanitize_text_field($order->get_meta($meta_keys[1]));
-            break;
+    foreach ($candidates as $gateway_id => $gateway) {
+        $number = $order->get_meta($gateway['fields'][0]['meta']);
+        if ('' !== $number) {
+            return array(
+                sanitize_text_field($number) . ' ( ' . $gateway['label'] . ' )',
+                sanitize_text_field($order->get_meta($gateway['fields'][1]['meta'])),
+            );
         }
     }
 
-    return array($account, $tran_id);
+    return array('', '');
 }
 
 /**
@@ -655,6 +647,9 @@ function ccd_checkout_page_enqueue_script()
 
         //js
         wp_enqueue_script('ccd_checkout_page-script', plugins_url('assets/js/ccd_scripts.js', __FILE__), array('jquery'), CCD_PAYMENT_GATEWAY_VERSION, true);
+        if (function_exists('ccd_proof_script_data')) {
+            wp_localize_script('ccd_checkout_page-script', 'ccdProof', ccd_proof_script_data());
+        }
     }
 }
 
@@ -682,6 +677,13 @@ function ccd_bkash_payment_validation()
         if (isset($_POST[$field])) {
             $data[$field] = sanitize_text_field(wp_unslash($_POST[$field])); // phpcs:ignore WordPress.Security.NonceVerification.Missing
         }
+    }
+    if (isset($_POST['ccd_bank_paid_to'])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $data['ccd_bank_paid_to'] = sanitize_text_field(wp_unslash($_POST['ccd_bank_paid_to'])); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+    }
+    // Each payment box has its own upload field, keyed by gateway id.
+    if (isset($_POST['ccd_payment_proof_' . $method])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $data['ccd_payment_proof'] = sanitize_text_field(wp_unslash($_POST['ccd_payment_proof_' . $method])); // phpcs:ignore WordPress.Security.NonceVerification.Missing
     }
 
     // A previous failed attempt may have left a pending order with this transaction ID.
@@ -774,6 +776,19 @@ function ccd_add_advance_payment_settings_page()
     );
 }
 
+add_filter('woocommerce_screen_ids', 'ccd_advance_payment_screen_id');
+/**
+ * Load WooCommerce admin scripts (enhanced selects) on the Advance Payment page.
+ *
+ * @param array $ids Screen ids.
+ * @return array
+ */
+function ccd_advance_payment_screen_id($ids)
+{
+    $ids[] = 'woocommerce_page_ccd-advance-payment-settings';
+    return $ids;
+}
+
 /**
  * Register advance payment settings
  */
@@ -805,7 +820,29 @@ function ccd_advance_payment_settings_page()
         update_option('ccd_advance_payment_title', $advance_title);
         update_option('ccd_advance_payment_text', $advance_text);
         update_option('ccd_remaining_payment_text', $remaining_text);
-        
+
+        $mode = (isset($_POST['ccd_advance_payment_mode']) && 'zone' === $_POST['ccd_advance_payment_mode']) ? 'zone' : 'shipping';
+        $inside_states = isset($_POST['ccd_advance_inside_states']) ? array_map('sanitize_text_field', (array) wp_unslash($_POST['ccd_advance_inside_states'])) : array();
+        $valid_states  = array_keys((array) WC()->countries->get_states('BD'));
+        $inside_states = array_values(array_intersect($inside_states, $valid_states));
+        $inside_amount  = isset($_POST['ccd_advance_inside_amount']) ? max(0, (float) wc_format_decimal(wp_unslash($_POST['ccd_advance_inside_amount']))) : 0;
+        $outside_amount = isset($_POST['ccd_advance_outside_amount']) ? max(0, (float) wc_format_decimal(wp_unslash($_POST['ccd_advance_outside_amount']))) : 0;
+        $min_order      = isset($_POST['ccd_advance_min_order']) ? max(0, (float) wc_format_decimal(wp_unslash($_POST['ccd_advance_min_order']))) : 0;
+
+        if ('zone' === $mode && empty($inside_states)) {
+            $inside_states = array('BD-13');
+            echo '<div class="notice notice-warning"><p>' . esc_html__('No "Inside Dhaka" area was selected, so Dhaka (BD-13) was used.', 'ccd-payment-gateway-domain') . '</p></div>';
+        }
+        if ('zone' === $mode && $inside_amount <= 0 && $outside_amount <= 0) {
+            echo '<div class="notice notice-warning"><p>' . esc_html__('Both zone amounts are 0, so no advance payment will be asked. Enter the inside and outside Dhaka amounts.', 'ccd-payment-gateway-domain') . '</p></div>';
+        }
+
+        update_option('ccd_advance_payment_mode', $mode);
+        update_option('ccd_advance_inside_states', $inside_states);
+        update_option('ccd_advance_inside_amount', $inside_amount);
+        update_option('ccd_advance_outside_amount', $outside_amount);
+        update_option('ccd_advance_min_order', $min_order);
+
         echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Settings saved successfully!', 'ccd-payment-gateway-domain') . '</p></div>';
     }
     
@@ -814,6 +851,12 @@ function ccd_advance_payment_settings_page()
     $advance_title = get_option('ccd_advance_payment_title', '');
     $advance_text = get_option('ccd_advance_payment_text', '');
     $remaining_text = get_option('ccd_remaining_payment_text', '');
+    $mode           = get_option('ccd_advance_payment_mode', 'shipping');
+    $inside_states  = (array) get_option('ccd_advance_inside_states', array('BD-13'));
+    $inside_amount  = get_option('ccd_advance_inside_amount', '');
+    $outside_amount = get_option('ccd_advance_outside_amount', '');
+    $min_order      = get_option('ccd_advance_min_order', '');
+    $bd_states      = (array) WC()->countries->get_states('BD');
     ?>
     <div class="wrap">
         <h1><?php echo esc_html__('Advance Payment Settings', 'ccd-payment-gateway-domain'); ?></h1>
@@ -829,6 +872,44 @@ function ccd_advance_payment_settings_page()
                         <p class="description">
                             <?php echo esc_html__('When enabled, customers will pay only the delivery/shipping charge as advance payment. The order will be set to "Advance Received" status after payment confirmation.', 'ccd-payment-gateway-domain'); ?>
                         </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="ccd_advance_payment_mode"><?php echo esc_html__('Advance Amount', 'ccd-payment-gateway-domain'); ?></label>
+                    </th>
+                    <td>
+                        <select id="ccd_advance_payment_mode" name="ccd_advance_payment_mode">
+                            <option value="shipping" <?php selected($mode, 'shipping'); ?>><?php esc_html_e('Delivery (shipping) charge of the order', 'ccd-payment-gateway-domain'); ?></option>
+                            <option value="zone" <?php selected($mode, 'zone'); ?>><?php esc_html_e('Fixed amount: inside Dhaka / outside Dhaka', 'ccd-payment-gateway-domain'); ?></option>
+                        </select>
+                        <p class="description"><?php esc_html_e('"Delivery charge" uses the shipping cost calculated at checkout. "Fixed amount" asks a set advance depending on the delivery district.', 'ccd-payment-gateway-domain'); ?></p>
+                    </td>
+                </tr>
+                <tr class="ccd-zone-row">
+                    <th scope="row"><label for="ccd_advance_inside_states"><?php esc_html_e('Inside Dhaka Areas', 'ccd-payment-gateway-domain'); ?></label></th>
+                    <td>
+                        <select id="ccd_advance_inside_states" name="ccd_advance_inside_states[]" multiple="multiple" class="wc-enhanced-select" style="min-width:350px;">
+                            <?php foreach ($bd_states as $code => $name) : ?>
+                                <option value="<?php echo esc_attr($code); ?>" <?php selected(in_array($code, $inside_states, true)); ?>><?php echo esc_html($name); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="description"><?php esc_html_e('Delivery districts charged the "inside Dhaka" amount. Default: Dhaka. Every other district (and other countries) use the outside amount.', 'ccd-payment-gateway-domain'); ?></p>
+                    </td>
+                </tr>
+                <tr class="ccd-zone-row">
+                    <th scope="row"><label for="ccd_advance_inside_amount"><?php esc_html_e('Inside Dhaka Amount', 'ccd-payment-gateway-domain'); ?></label></th>
+                    <td><input type="number" step="0.01" min="0" id="ccd_advance_inside_amount" name="ccd_advance_inside_amount" value="<?php echo esc_attr($inside_amount); ?>" style="width:120px;"> <?php echo esc_html(get_woocommerce_currency_symbol()); ?></td>
+                </tr>
+                <tr class="ccd-zone-row">
+                    <th scope="row"><label for="ccd_advance_outside_amount"><?php esc_html_e('Outside Dhaka Amount', 'ccd-payment-gateway-domain'); ?></label></th>
+                    <td><input type="number" step="0.01" min="0" id="ccd_advance_outside_amount" name="ccd_advance_outside_amount" value="<?php echo esc_attr($outside_amount); ?>" style="width:120px;"> <?php echo esc_html(get_woocommerce_currency_symbol()); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="ccd_advance_min_order"><?php esc_html_e('Minimum Order Total', 'ccd-payment-gateway-domain'); ?></label></th>
+                    <td>
+                        <input type="number" step="0.01" min="0" id="ccd_advance_min_order" name="ccd_advance_min_order" value="<?php echo esc_attr($min_order); ?>" style="width:120px;" placeholder="0"> <?php echo esc_html(get_woocommerce_currency_symbol()); ?>
+                        <p class="description"><?php esc_html_e('Only ask for an advance when the order total is at least this amount. Leave empty or 0 to always ask.', 'ccd-payment-gateway-domain'); ?></p>
                     </td>
                 </tr>
                 <tr>
@@ -881,6 +962,13 @@ function ccd_advance_payment_settings_page()
             </p>
         </form>
     </div>
+    <script>
+        jQuery(function ($) {
+            var toggle = function () { $('.ccd-zone-row').toggle($('#ccd_advance_payment_mode').val() === 'zone'); };
+            $('#ccd_advance_payment_mode').on('change', toggle);
+            toggle();
+        });
+    </script>
     <?php
 }
 
@@ -901,10 +989,132 @@ function ccd_get_advance_payment_amount($order)
         return 0;
     }
 
-    $shipping_total = $order->get_shipping_total();
-    $shipping_tax = $order->get_shipping_tax();
+    $shipping = floatval($order->get_shipping_total()) + floatval($order->get_shipping_tax());
+    $country  = $order->get_shipping_country() ? $order->get_shipping_country() : $order->get_billing_country();
+    $state    = $order->get_shipping_country() ? $order->get_shipping_state() : $order->get_billing_state();
 
-    return floatval($shipping_total) + floatval($shipping_tax);
+    return ccd_calculate_advance_amount($shipping, $country, $state, floatval($order->get_total()), $order->needs_shipping_address() || $shipping > 0);
+}
+
+/**
+ * Advance amount for a cart or order.
+ *
+ * Mode "shipping" (default, as in earlier versions): the shipping charge.
+ * Mode "zone": a fixed amount for inside / outside Dhaka (configurable areas).
+ * Returns 0 when advance payment does not apply: disabled, order below the
+ * minimum, nothing to ship, or the advance would cover the whole order.
+ *
+ * @param float  $shipping       Shipping total incl. tax.
+ * @param string $country        Delivery country code.
+ * @param string $state          Delivery state code (e.g. BD-13).
+ * @param float  $order_total    Order / cart total.
+ * @param bool   $needs_shipping Whether the order is delivered.
+ * @return float
+ */
+function ccd_calculate_advance_amount($shipping, $country, $state, $order_total, $needs_shipping = true)
+{
+    if (!ccd_is_advance_payment_enabled() || !$needs_shipping) {
+        return 0;
+    }
+
+    $minimum = (float) get_option('ccd_advance_min_order', 0);
+    if ($minimum > 0 && $order_total < $minimum) {
+        return 0;
+    }
+
+    if ('zone' === get_option('ccd_advance_payment_mode', 'shipping')) {
+        $inside_states = (array) get_option('ccd_advance_inside_states', array('BD-13'));
+        $inside        = ('BD' === $country && in_array($state, $inside_states, true));
+        $amount        = (float) get_option($inside ? 'ccd_advance_inside_amount' : 'ccd_advance_outside_amount', 0);
+    } else {
+        $amount = (float) $shipping;
+    }
+
+    $amount = round(max(0, $amount), wc_get_price_decimals());
+
+    // An advance that covers the whole order is just a full payment.
+    if ($amount <= 0 || $amount >= $order_total) {
+        return 0;
+    }
+
+    return (float) apply_filters('ccd_advance_payment_amount', $amount, $country, $state, $order_total);
+}
+
+/**
+ * Apply advance payment to an order during process_payment().
+ *
+ * Keeps the behaviour of earlier versions: the order total becomes the
+ * advance amount, the original total and remaining amount are stored as meta,
+ * and the order moves to "Advance Received".
+ *
+ * @param WC_Order $order Order.
+ * @param string   $label Gateway label for the order note.
+ * @return bool Whether advance payment was applied.
+ */
+function ccd_apply_advance_payment($order, $label)
+{
+    $advance_amount = ccd_get_advance_payment_amount($order);
+    if ($advance_amount <= 0) {
+        return false;
+    }
+
+    $original_total   = $order->get_total();
+    $remaining_amount = $original_total - $advance_amount;
+
+    $order->update_meta_data('_ccd_advance_payment_received', 'yes');
+    $order->update_meta_data('_ccd_original_order_total', $original_total);
+    $order->update_meta_data('_ccd_advance_amount_paid', $advance_amount);
+    $order->update_meta_data('_ccd_remaining_amount', $remaining_amount);
+    $order->set_total($advance_amount);
+    $order->save();
+
+    $order->update_status(
+        'advance-received',
+        sprintf(
+            /* translators: %s: payment method label */
+            esc_html__('Advance payment received via %s. Remaining amount: ', 'ccd-payment-gateway-domain'),
+            $label
+        ) . wc_price($remaining_amount)
+    );
+
+    return true;
+}
+
+/**
+ * Normal (non-advance) status update after checkout.
+ *
+ * @param WC_Order $order  Order.
+ * @param string   $status Configured status (with or without "wc-" prefix).
+ * @param string   $label  Gateway label for the order note.
+ */
+function ccd_apply_order_status($order, $status, $label)
+{
+    $status = (string) $status;
+    if ('wc-' === substr($status, 0, 3)) {
+        $status = substr($status, 3);
+    }
+    if ('' === $status) {
+        $status = 'on-hold';
+    }
+    /* translators: %s: payment method label */
+    $order->update_status($status, sprintf(esc_html__('Checkout with %s payment. ', 'ccd-payment-gateway-domain'), $label));
+}
+
+/**
+ * Classic checkout: advance payment notice inside the payment box.
+ */
+function ccd_render_advance_notice()
+{
+    $display = ccd_get_advance_payment_display();
+    if (!$display) {
+        return;
+    }
+
+    echo '<div class="ccd_advance_payment_notice" style="background: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin: 15px 0; border-radius: 4px;">';
+    echo '<strong>' . esc_html($display['title']) . '</strong><br>';
+    echo esc_html($display['advanceText']) . ' <strong>' . esc_html($display['advanceAmount']) . '</strong><br>';
+    echo esc_html($display['remainingText']) . ' <strong>' . esc_html($display['remainingAmount']) . '</strong>';
+    echo '</div>';
 }
 
 /**
@@ -921,20 +1131,23 @@ function ccd_get_advance_payment_display()
     if (!ccd_is_advance_payment_enabled()) {
         return null;
     }
-    if (!function_exists('WC') || !WC()->cart || !WC()->cart->needs_shipping()) {
+    if (!function_exists('WC') || !WC()->cart) {
         return null;
     }
 
-    $cart           = WC()->cart;
-    $shipping_total = $cart->get_shipping_total();
-    $shipping_tax   = $cart->get_shipping_tax();
-    $advance_amount = floatval($shipping_total) + floatval($shipping_tax);
+    $cart     = WC()->cart;
+    $customer = WC()->customer;
+    $shipping = floatval($cart->get_shipping_total()) + floatval($cart->get_shipping_tax());
+    $country  = $customer ? $customer->get_shipping_country() : '';
+    $state    = $customer ? $customer->get_shipping_state() : '';
+
+    $cart_total     = floatval($cart->get_total('edit'));
+    $advance_amount = ccd_calculate_advance_amount($shipping, $country, $state, $cart_total, $cart->needs_shipping());
 
     if ($advance_amount <= 0) {
         return null;
     }
 
-    $cart_total       = floatval($cart->get_total(''));
     $remaining_amount = $cart_total - $advance_amount;
 
     $title = get_option('ccd_advance_payment_title', '');
@@ -942,17 +1155,23 @@ function ccd_get_advance_payment_display()
     $title = apply_filters('ccd_advance_payment_title', $title);
 
     $advance_text = get_option('ccd_advance_payment_text', '');
-    $advance_text = !empty($advance_text) ? $advance_text : __('You will pay only the delivery charge as advance payment:', 'ccd-payment-gateway-domain');
+    if (empty($advance_text)) {
+        $advance_text = 'zone' === get_option('ccd_advance_payment_mode', 'shipping')
+            ? __('Pay this advance now to confirm your order:', 'ccd-payment-gateway-domain')
+            : __('You will pay only the delivery charge as advance payment:', 'ccd-payment-gateway-domain');
+    }
     $advance_text = apply_filters('ccd_advance_payment_text', $advance_text);
 
     $remaining_text = get_option('ccd_remaining_payment_text', '');
     $remaining_text = !empty($remaining_text) ? $remaining_text : __('Remaining amount to be paid later:', 'ccd-payment-gateway-domain');
     $remaining_text = apply_filters('ccd_remaining_payment_text', $remaining_text);
 
-    $advance_formatted   = wp_strip_all_tags(wc_price($advance_amount, array('currency' => get_woocommerce_currency())));
-    $remaining_formatted = wp_strip_all_tags(wc_price($remaining_amount, array('currency' => get_woocommerce_currency())));
+    $advance_formatted   = html_entity_decode(wp_strip_all_tags(wc_price($advance_amount, array('currency' => get_woocommerce_currency()))), ENT_QUOTES, 'UTF-8');
+    $remaining_formatted = html_entity_decode(wp_strip_all_tags(wc_price($remaining_amount, array('currency' => get_woocommerce_currency()))), ENT_QUOTES, 'UTF-8');
 
-    // Support {amount} placeholders.
+    // Support {amount} placeholders: when used, the amount is already in the text.
+    $advance_has   = false !== strpos($advance_text, '{amount}');
+    $remaining_has = false !== strpos($remaining_text, '{amount}');
     $advance_text   = str_replace('{amount}', $advance_formatted, $advance_text);
     $remaining_text = str_replace('{amount}', $remaining_formatted, $remaining_text);
 
@@ -960,8 +1179,8 @@ function ccd_get_advance_payment_display()
         'title'           => wp_strip_all_tags($title),
         'advanceText'     => wp_strip_all_tags($advance_text),
         'remainingText'   => wp_strip_all_tags($remaining_text),
-        'advanceAmount'   => $advance_formatted,
-        'remainingAmount' => $remaining_formatted,
+        'advanceAmount'   => $advance_has ? '' : $advance_formatted,
+        'remainingAmount' => $remaining_has ? '' : $remaining_formatted,
     );
 }
 
@@ -985,6 +1204,10 @@ add_action('shakvaro_wp_insights_loaded', function () {
     ->track_feature('gateway_nagad', function () { $s = get_option('woocommerce_ccd_nagad_settings'); return is_array($s) && (isset($s['enabled']) ? $s['enabled'] : '') === 'yes'; })
     ->track_feature('gateway_rocket', function () { $s = get_option('woocommerce_ccd_rocket_settings'); return is_array($s) && (isset($s['enabled']) ? $s['enabled'] : '') === 'yes'; })
     ->track_feature('gateway_payoneer', function () { $s = get_option('woocommerce_ccd_payoneer_settings'); return is_array($s) && (isset($s['enabled']) ? $s['enabled'] : '') === 'yes'; })
+    ->track_feature('gateway_upay', function () { $s = get_option('woocommerce_ccd_upay_settings'); return is_array($s) && (isset($s['enabled']) ? $s['enabled'] : '') === 'yes'; })
+    ->track_feature('gateway_cellfin', function () { $s = get_option('woocommerce_ccd_cellfin_settings'); return is_array($s) && (isset($s['enabled']) ? $s['enabled'] : '') === 'yes'; })
+    ->track_feature('gateway_bank', function () { $s = get_option('woocommerce_ccd_bank_settings'); return is_array($s) && (isset($s['enabled']) ? $s['enabled'] : '') === 'yes'; })
+    ->track_feature('gateway_banglaqr', function () { $s = get_option('woocommerce_ccd_banglaqr_settings'); return is_array($s) && (isset($s['enabled']) ? $s['enabled'] : '') === 'yes'; })
     ->track_feature('advance_payment', function () { return get_option('ccd_enable_advance_payment', 'no') === 'yes'; })
     ->add_deactivation_survey();
 });
