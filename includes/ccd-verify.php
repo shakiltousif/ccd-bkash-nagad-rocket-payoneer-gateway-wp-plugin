@@ -269,7 +269,7 @@ function ccd_verify_check_request($req)
     if ($expires < time()) {
         return new WP_Error('expired', __('This link has expired. Please verify the payment from the order screen.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'));
     }
-    if ($order->get_meta('_ccd_verify_done')) {
+    if ($order->get_meta('_ccd_verify_done') || false !== get_option('ccd_verified_' . $order->get_id(), false)) {
         return new WP_Error('used', __('This payment was already marked from an email link.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'));
     }
     if (!ccd_order_needs_verification($order)) {
@@ -339,7 +339,13 @@ function ccd_verify_handle()
         ccd_verify_page($title, '<table>' . $rows . '</table><p class="msg">' . esc_html($question) . '</p>' . $form);
     }
 
-    // POST: apply once.
+    // POST: claim the order atomically before acting, so two racing requests (double click, or
+    // "received" and "not received" at once) cannot both act. add_option() is not atomic (it
+    // checks, then INSERT ... ON DUPLICATE KEY UPDATE), so use INSERT IGNORE on the unique
+    // option_name: exactly one request inserts the row. The row stays as the "used" marker.
+    if (!ccd_verify_claim($order->get_id(), $decision)) {
+        ccd_verify_page($site, '<p class="msg">' . esc_html__('This payment was already marked from an email link.', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') . '</p>');
+    }
     $order->update_meta_data('_ccd_verify_done', $decision . '|' . time());
     $order->save();
     if ('approve' === $decision) {
@@ -356,6 +362,34 @@ function ccd_verify_handle()
     /* translators: %s: order status */
     $status = sprintf(__('Order status: %s', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'), wc_get_order_status_name($order->get_status()));
     ccd_verify_page($title, '<p class="msg">' . esc_html($message) . '</p><p class="msg">' . esc_html($status) . '</p><p><a href="' . esc_url($order->get_edit_order_url()) . '">' . esc_html__('Open the order', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') . '</a></p>');
+}
+
+/**
+ * Atomically claim an order for email verification.
+ *
+ * @param int    $order_id Order ID.
+ * @param string $decision approve|reject.
+ * @return bool True for the one request that wins the claim.
+ */
+function ccd_verify_claim($order_id, $decision)
+{
+    global $wpdb;
+    $name     = 'ccd_verified_' . absint($order_id);
+    $inserted = $wpdb->query($wpdb->prepare("INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $name, $decision . '|' . time())); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+    wp_cache_delete($name, 'options');
+    wp_cache_delete('notoptions', 'options');
+    return 1 === (int) $inserted;
+}
+
+add_action('woocommerce_delete_order', 'ccd_verify_forget_order');
+/**
+ * Remove the email-verification marker when an order is permanently deleted.
+ *
+ * @param int $order_id Order ID.
+ */
+function ccd_verify_forget_order($order_id)
+{
+    delete_option('ccd_verified_' . absint($order_id));
 }
 
 //#################################

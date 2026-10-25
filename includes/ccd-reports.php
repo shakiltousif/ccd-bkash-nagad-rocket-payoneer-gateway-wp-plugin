@@ -290,7 +290,31 @@ function ccd_reports_page()
 function ccd_reports_csv_cell($value)
 {
     $value = (string) $value;
-    return preg_match('/^[=+\-@\t\r]/', $value) ? "'" . $value : $value;
+    // Check the first visible character: leading spaces / control characters do not stop
+    // spreadsheets from evaluating a formula. Covers full-width variants and DDE "|".
+    $first = ltrim($value, " \t\r\n\0\x0B");
+    return preg_match('/^(?:[=+\-@|]|\x{FF1D}|\x{FF0B}|\x{FF0D}|\x{FF20})/u', $first) || $first !== $value
+        ? "'" . $value
+        : $value;
+}
+
+
+/**
+ * One RFC 4180 CSV line: every field quoted, inner quotes doubled, no escape character.
+ * fputcsv() treats "\" as an escape, which spreadsheets do not, so a crafted value could
+ * break out of its cell; PHP 7.3 (our minimum) cannot turn that off.
+ *
+ * @param array $fields Field values.
+ * @return string
+ */
+function ccd_reports_csv_line($fields)
+{
+    $cells = array();
+    foreach ($fields as $field) {
+        $field   = str_replace(array("\r\n", "\r", "\n"), ' ', (string) $field);
+        $cells[] = '"' . str_replace('"', '""', $field) . '"';
+    }
+    return implode(',', $cells) . "\r\n";
 }
 
 add_action('admin_post_ccd_report_csv', 'ccd_reports_csv');
@@ -311,7 +335,7 @@ function ccd_reports_csv()
     header('Content-Disposition: attachment; filename="payments-' . $f['from'] . '-to-' . $f['to'] . '.csv"');
     $out = fopen('php://output', 'w');
     fwrite($out, "\xEF\xBB\xBF"); // UTF-8 BOM so Excel shows Bangla text correctly.
-    fputcsv($out, array(
+    fwrite($out, ccd_reports_csv_line(array(
         __('Order', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
         __('Date', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
         __('Customer', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
@@ -323,14 +347,14 @@ function ccd_reports_csv()
         __('Currency', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
         __('Status', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
         __('Screenshot', 'codecarebd-bkash-nagad-rocket-payoneer-gateway'),
-    ), ',', '"', '\\'); // Explicit escape: PHP 8.4 deprecates relying on the default.
+    )));
     $currency = get_woocommerce_currency();
     foreach ($rows as $r) {
-        fputcsv($out, array_map('ccd_reports_csv_cell', array(
+        fwrite($out, ccd_reports_csv_line(array_map('ccd_reports_csv_cell', array(
             $r['number'], $r['date'], $r['customer'], $r['method'], $r['sender'], $r['trx'], $r['paid_to'],
             wc_format_decimal($r['amount'], wc_get_price_decimals()), $currency, $r['status'],
             $r['proof'] ? __('Yes', 'codecarebd-bkash-nagad-rocket-payoneer-gateway') : '',
-        )), ',', '"', '\\');
+        ))));
     }
     fclose($out); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
     exit;
